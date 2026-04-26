@@ -105,7 +105,10 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 continue
             }
 
-            host.statusItem.length = item.presentation.menuWidth
+            let itemSettings = settings.settings(for: item)
+            host.statusItem.length = item.presentation.menuWidth(
+                showingSparkline: itemSettings.showsMenuBarSparkline
+            )
             host.render(
                 item: item,
                 button: button,
@@ -315,7 +318,9 @@ private enum StatusItemImageRenderer {
         display: MetricDisplaySnapshot,
         itemSettings: MetricItemSettings
     ) -> NSImage {
-        let width = item.presentation.menuWidth
+        let width = item.presentation.menuWidth(
+            showingSparkline: itemSettings.showsMenuBarSparkline
+        )
         let size = NSSize(width: width, height: 20)
         let image = NSImage(size: size)
         image.lockFocus()

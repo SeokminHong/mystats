@@ -708,6 +708,7 @@ C32 G18 61°
 
 - 메뉴바 항목은 지표별로 고정폭을 가진다.
 - 고정폭은 AppKit `NSStatusItem.length`로 강제하며, 표시값이 변해도 레이아웃 시프트가 발생하지 않도록 지표별 최대 예상 문자열 기준으로 정한다.
+- 메뉴바 chart를 끈 항목은 chart 영역만큼 `NSStatusItem.length`를 줄인다. chart off 상태에서도 해당 상태 안에서는 고정폭을 유지한다.
 - status item 내부 렌더링은 불필요한 좌우 padding을 두지 않고, icon/text/sparkline을 1-2px 단위 여백으로 조밀하게 배치한다.
 - 숫자는 monospaced digit을 사용한다.
 - 메뉴바 텍스트는 현재 상태 요약을 담되 1-2줄 안에 들어오게 압축한다.
@@ -814,6 +815,7 @@ manager/settings window 기능:
 manager/settings window UI 정책:
 
 - macOS 표준 utility/settings window처럼 동작한다.
+- settings window header의 아이콘은 앱 번들 아이콘과 일치해야 한다.
 - 설정 화면은 sidebar checkbox 목록이 아니라 `General`, `CPU`, `GPU`, `Temperature`, `Network`, `Disk` 탭으로 구성한다.
 - metric tab에는 해당 metric의 on/off와 상세 표시 설정을 함께 둔다.
 - 항목별 toggle은 즉시 저장한다.

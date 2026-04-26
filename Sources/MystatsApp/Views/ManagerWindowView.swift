@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import MystatsCore
 
@@ -35,11 +36,10 @@ struct ManagerWindowView: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "chart.xyaxis.line")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(.blue)
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
                 .frame(width: 42, height: 42)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("mystats")
@@ -122,6 +122,8 @@ private struct MetricSettingsTab: View {
             history: metricStore.history.elements,
             settings: settingsStore.settings
         )
+        let itemSettings = settingsStore.settings.settings(for: item)
+        let menuWidth = presentation.menuWidth(showingSparkline: itemSettings.showsMenuBarSparkline)
 
         Form {
             Section {
@@ -154,8 +156,8 @@ private struct MetricSettingsTab: View {
                 }
                 Toggle("Show menu bar chart", isOn: metricSettingsBinding(\.showsMenuBarSparkline))
 
-                LabeledContent("Fixed width") {
-                    Text("\(Int(presentation.menuWidth)) pt")
+                LabeledContent("Menu width") {
+                    Text("\(Int(menuWidth)) pt")
                         .monospacedDigit()
                 }
 

@@ -5,6 +5,7 @@ struct MetricPresentation {
     let title: String
     let symbolName: String
     let menuWidth: CGFloat
+    let compactMenuWidth: CGFloat
     let tint: Color
     let showsMenuBarIcon: Bool
     let menuSparklineWidth: CGFloat
@@ -13,6 +14,7 @@ struct MetricPresentation {
         title: String,
         symbolName: String,
         menuWidth: CGFloat,
+        compactMenuWidth: CGFloat? = nil,
         tint: Color,
         showsMenuBarIcon: Bool = true,
         menuSparklineWidth: CGFloat = 22
@@ -20,9 +22,14 @@ struct MetricPresentation {
         self.title = title
         self.symbolName = symbolName
         self.menuWidth = menuWidth
+        self.compactMenuWidth = compactMenuWidth ?? max(menuWidth - menuSparklineWidth - 4, 44)
         self.tint = tint
         self.showsMenuBarIcon = showsMenuBarIcon
         self.menuSparklineWidth = menuSparklineWidth
+    }
+
+    func menuWidth(showingSparkline: Bool) -> CGFloat {
+        showingSparkline ? menuWidth : compactMenuWidth
     }
 }
 

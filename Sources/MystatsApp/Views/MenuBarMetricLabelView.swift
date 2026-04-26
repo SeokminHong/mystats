@@ -16,6 +16,7 @@ struct MenuBarMetricLabelView: View {
             settings: settings
         )
         let itemSettings = settings.settings(for: item)
+        let menuWidth = presentation.menuWidth(showingSparkline: itemSettings.showsMenuBarSparkline)
 
         HStack(spacing: 4) {
             if presentation.showsMenuBarIcon {
@@ -36,7 +37,7 @@ struct MenuBarMetricLabelView: View {
                     .frame(width: presentation.menuSparklineWidth)
             }
         }
-        .frame(width: presentation.menuWidth, alignment: .leading)
+        .frame(width: menuWidth, alignment: .leading)
         .contentShape(Rectangle())
     }
 
