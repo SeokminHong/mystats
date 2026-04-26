@@ -2,6 +2,7 @@ import Foundation
 
 public struct AppSettings: Codable, Equatable, Sendable {
     public var menuBarItems: [MenuBarItem]
+    public var metricItemSettings: [MenuBarItem: MetricItemSettings]
     public var samplingMode: SamplingMode
     public var showUnknownSensors: Bool
     public var includeVPNInterfaces: Bool
@@ -11,6 +12,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     public init(
         menuBarItems: [MenuBarItem] = [.cpu, .gpu, .temperature, .network],
+        metricItemSettings: [MenuBarItem: MetricItemSettings] = Self.defaultMetricItemSettings(),
         samplingMode: SamplingMode = .normal,
         showUnknownSensors: Bool = false,
         includeVPNInterfaces: Bool = false,
@@ -19,6 +21,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         temperatureUnit: TemperatureUnit = .celsius
     ) {
         self.menuBarItems = menuBarItems
+        self.metricItemSettings = metricItemSettings
         self.samplingMode = samplingMode
         self.showUnknownSensors = showUnknownSensors
         self.includeVPNInterfaces = includeVPNInterfaces
@@ -26,6 +29,55 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.launchAtLogin = launchAtLogin
         self.temperatureUnit = temperatureUnit
     }
+
+    public func settings(for item: MenuBarItem) -> MetricItemSettings {
+        metricItemSettings[item] ?? .default
+    }
+
+    public static func defaultMetricItemSettings() -> [MenuBarItem: MetricItemSettings] {
+        Dictionary(uniqueKeysWithValues: MenuBarItem.allCases.map { ($0, MetricItemSettings.default) })
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case menuBarItems
+        case metricItemSettings
+        case samplingMode
+        case showUnknownSensors
+        case includeVPNInterfaces
+        case includeExternalDisks
+        case launchAtLogin
+        case temperatureUnit
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.menuBarItems = try container.decodeIfPresent([MenuBarItem].self, forKey: .menuBarItems) ?? [.cpu, .gpu, .temperature, .network]
+        self.metricItemSettings = try container.decodeIfPresent([MenuBarItem: MetricItemSettings].self, forKey: .metricItemSettings) ?? Self.defaultMetricItemSettings()
+        self.samplingMode = try container.decodeIfPresent(SamplingMode.self, forKey: .samplingMode) ?? .normal
+        self.showUnknownSensors = try container.decodeIfPresent(Bool.self, forKey: .showUnknownSensors) ?? false
+        self.includeVPNInterfaces = try container.decodeIfPresent(Bool.self, forKey: .includeVPNInterfaces) ?? false
+        self.includeExternalDisks = try container.decodeIfPresent(Bool.self, forKey: .includeExternalDisks) ?? false
+        self.launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
+        self.temperatureUnit = try container.decodeIfPresent(TemperatureUnit.self, forKey: .temperatureUnit) ?? .celsius
+    }
+}
+
+public struct MetricItemSettings: Codable, Equatable, Sendable {
+    public var showsSecondaryValue: Bool
+    public var showsMenuBarSparkline: Bool
+    public var showsPopoverDetails: Bool
+
+    public init(
+        showsSecondaryValue: Bool = true,
+        showsMenuBarSparkline: Bool = true,
+        showsPopoverDetails: Bool = true
+    ) {
+        self.showsSecondaryValue = showsSecondaryValue
+        self.showsMenuBarSparkline = showsMenuBarSparkline
+        self.showsPopoverDetails = showsPopoverDetails
+    }
+
+    public static let `default` = MetricItemSettings()
 }
 
 public enum MenuBarItem: String, CaseIterable, Codable, Equatable, Identifiable, Sendable {
@@ -52,4 +104,3 @@ public enum TemperatureUnit: String, CaseIterable, Codable, Equatable, Identifia
 
     public var id: String { rawValue }
 }
-

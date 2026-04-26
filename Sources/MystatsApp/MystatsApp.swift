@@ -7,85 +7,48 @@ struct MystatsApp: App {
     @StateObject private var settingsStore = AppRuntime.shared.settingsStore
 
     init() {
+        let runtime = AppRuntime.shared
+        StatusBarController.shared.start(
+            metricStore: runtime.metricStore,
+            settingsStore: runtime.settingsStore
+        )
+
         guard CommandLine.arguments.contains("--open-settings") else {
+            if let item = Self.requestedMetricPopover() {
+                Task { @MainActor in
+                    StatusBarController.shared.showPopover(for: item)
+                }
+            }
             return
         }
 
         Task { @MainActor in
-            AppRuntime.shared.metricStore.startPreviewUpdates()
             AppWindowController.showSettings(
-                metricStore: AppRuntime.shared.metricStore,
-                settingsStore: AppRuntime.shared.settingsStore
+                metricStore: runtime.metricStore,
+                settingsStore: runtime.settingsStore
             )
         }
     }
 
     var body: some Scene {
-        MenuBarExtra {
-            ManagerLauncherView()
-                .environmentObject(metricStore)
-                .environmentObject(settingsStore)
-                .frame(width: 260)
-                .onAppear {
-                    metricStore.startPreviewUpdates()
-                }
-        } label: {
-            Label("mystats", systemImage: "chart.xyaxis.line")
-                .labelStyle(.iconOnly)
-                .frame(width: 28)
-                .onAppear {
-                    metricStore.startPreviewUpdates()
-                }
-        }
-        .menuBarExtraStyle(.window)
-
-        metricExtra(.cpu)
-        metricExtra(.gpu)
-        metricExtra(.temperature)
-        metricExtra(.network)
-        metricExtra(.disk)
-
         Settings {
             ManagerWindowView()
                 .environmentObject(settingsStore)
                 .environmentObject(metricStore)
-                .frame(width: 720, height: 520)
+                .frame(width: 760, height: 560)
                 .onAppear {
                     metricStore.startPreviewUpdates()
                 }
         }
     }
 
-    @SceneBuilder
-    private func metricExtra(_ item: MenuBarItem) -> some Scene {
-        MenuBarExtra(isInserted: menuBarItemBinding(item)) {
-            MetricPopoverView(item: item)
-                .environmentObject(metricStore)
-                .environmentObject(settingsStore)
-                .frame(width: 440)
-                .frame(maxHeight: 620)
-                .onAppear {
-                    metricStore.startPreviewUpdates()
-                }
-        } label: {
-            MenuBarMetricLabelView(
-                item: item,
-                snapshot: metricStore.snapshot,
-                history: metricStore.history.elements,
-                settings: settingsStore.settings
-            )
-            .onAppear {
-                metricStore.startPreviewUpdates()
+    private static func requestedMetricPopover() -> MenuBarItem? {
+        CommandLine.arguments.compactMap { argument in
+            guard argument.hasPrefix("--open-metric=") else {
+                return nil
             }
-        }
-        .menuBarExtraStyle(.window)
-    }
-
-    private func menuBarItemBinding(_ item: MenuBarItem) -> Binding<Bool> {
-        Binding {
-            settingsStore.settings.menuBarItems.contains(item)
-        } set: { enabled in
-            settingsStore.setMenuBarItem(item, enabled: enabled)
-        }
+            let value = String(argument.dropFirst("--open-metric=".count))
+            return MenuBarItem(rawValue: value)
+        }.first
     }
 }

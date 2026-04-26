@@ -34,7 +34,7 @@ enum AppWindowController {
         let rootView = ManagerWindowView()
             .environmentObject(settingsStore)
             .environmentObject(metricStore)
-            .frame(minWidth: 720, minHeight: 520)
+            .frame(minWidth: 760, minHeight: 560)
 
         let window = NSWindow(
             contentRect: initialSettingsWindowFrame(),
@@ -43,7 +43,7 @@ enum AppWindowController {
             defer: false
         )
         window.title = "mystats Settings"
-        window.contentMinSize = NSSize(width: 720, height: 520)
+        window.contentMinSize = NSSize(width: 760, height: 560)
         window.contentViewController = NSHostingController(rootView: rootView)
         window.isReleasedWhenClosed = false
         return window

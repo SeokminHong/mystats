@@ -35,7 +35,7 @@ enum MetricDisplayResolver {
 
         return MetricDisplaySnapshot(
             primaryValue: PercentFormatter.short(cpu.totalUsage),
-            secondaryValue: nil,
+            secondaryValue: coreGroupSummary(cpu),
             status: cpu.status,
             chartValues: history.compactMap { $0.cpu?.totalUsage }
         )
@@ -105,5 +105,12 @@ enum MetricDisplayResolver {
             chartValues: []
         )
     }
-}
 
+    private static func coreGroupSummary(_ cpu: CPUMetrics) -> String? {
+        guard let performance = cpu.performanceCoreAverage, let efficiency = cpu.efficiencyCoreAverage else {
+            return nil
+        }
+
+        return "P\(PercentFormatter.short(performance)) E\(PercentFormatter.short(efficiency))"
+    }
+}

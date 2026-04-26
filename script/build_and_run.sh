@@ -2,6 +2,7 @@
 set -euo pipefail
 
 MODE="${1:-run}"
+METRIC="${2:-cpu}"
 APP_NAME="mystats"
 BUNDLE_ID="com.seokmin.mystats"
 MIN_SYSTEM_VERSION="13.0"
@@ -59,6 +60,10 @@ open_settings() {
   /usr/bin/open -n "$APP_BUNDLE" --args --open-settings
 }
 
+open_metric() {
+  /usr/bin/open -n "$APP_BUNDLE" --args "--open-metric=$METRIC"
+}
+
 case "$MODE" in
   run)
     open_app
@@ -82,8 +87,11 @@ case "$MODE" in
   --settings|settings)
     open_settings
     ;;
+  --metric|metric)
+    open_metric
+    ;;
   *)
-    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify|--settings]" >&2
+    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify|--settings|--metric <cpu|gpu|temperature|network|disk>]" >&2
     exit 2
     ;;
 esac

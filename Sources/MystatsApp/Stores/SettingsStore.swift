@@ -23,6 +23,10 @@ final class SettingsStore: ObservableObject {
             return
         }
 
+        guard enabled || settings.menuBarItems.count > 1 else {
+            return
+        }
+
         if enabled {
             settings.menuBarItems.append(item)
         } else {
@@ -32,6 +36,28 @@ final class SettingsStore: ObservableObject {
 
     func isMenuBarItemEnabled(_ item: MenuBarItem) -> Bool {
         settings.menuBarItems.contains(item)
+    }
+
+    func canDisableMenuBarItem(_ item: MenuBarItem) -> Bool {
+        !settings.menuBarItems.contains(item) || settings.menuBarItems.count > 1
+    }
+
+    func metricItemSettings(for item: MenuBarItem) -> MetricItemSettings {
+        settings.settings(for: item)
+    }
+
+    func updateMetricItemSettings(
+        for item: MenuBarItem,
+        _ update: (inout MetricItemSettings) -> Void
+    ) {
+        var next = settings.metricItemSettings[item] ?? .default
+        update(&next)
+
+        guard settings.metricItemSettings[item] != next else {
+            return
+        }
+
+        settings.metricItemSettings[item] = next
     }
 
     private func save(_ settings: AppSettings) {

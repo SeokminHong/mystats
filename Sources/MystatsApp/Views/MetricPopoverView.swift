@@ -21,6 +21,7 @@ struct MetricPopoverView: View {
             history: metricStore.history.elements,
             settings: settingsStore.settings
         )
+        let itemSettings = settingsStore.settings.settings(for: item)
 
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -34,7 +35,9 @@ struct MetricPopoverView: View {
 
                 detailRows(detail.detailRows)
 
-                metricDetail
+                if itemSettings.showsPopoverDetails {
+                    metricDetail
+                }
             }
             .padding(16)
         }
