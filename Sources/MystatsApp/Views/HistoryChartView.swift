@@ -223,20 +223,17 @@ struct HistoryChartView: View {
     }
 
     private func axisDomain(for values: [Double]) -> ChartAxis {
-        if case let .fixed(domain, lowerLabel, upperLabel)? = fixedScale {
+        switch commonScale {
+        case .some(.fixed(let domain, let lowerLabel, let upperLabel)):
             return ChartAxis(min: domain.lowerBound, max: domain.upperBound, lowerLabel: lowerLabel, upperLabel: upperLabel)
+        case .some(.automaticAdaptive):
+            return adaptiveAxisDomain(for: values)
+        case .some(.automaticFloorZero), nil:
+            return floorZeroAxisDomain(for: values)
         }
-
-        let maxValue = max(values.max() ?? 0, 1)
-        return ChartAxis(
-            min: 0,
-            max: maxValue,
-            lowerLabel: "0",
-            upperLabel: abbreviated(maxValue)
-        )
     }
 
-    private var fixedScale: MetricChartScale? {
+    private var commonScale: MetricChartScale? {
         guard let first = series.first?.scale else {
             return nil
         }
@@ -249,9 +246,65 @@ struct HistoryChartView: View {
                 }
                 return false
             } ? first : nil
+        case .automaticAdaptive:
+            return series.allSatisfy {
+                if case .automaticAdaptive = $0.scale {
+                    return true
+                }
+                return false
+            } ? first : nil
         case .automaticFloorZero:
-            return nil
+            return series.allSatisfy {
+                if case .automaticFloorZero = $0.scale {
+                    return true
+                }
+                return false
+            } ? first : nil
         }
+    }
+
+    private func adaptiveAxisDomain(for values: [Double]) -> ChartAxis {
+        let robustDomain = ChartDomainResolver.robustDomain(for: values)
+        let minValue = max(robustDomain.lower, 0)
+        let maxValue = max(robustDomain.upper, minValue)
+        guard maxValue > 0 else {
+            return ChartAxis(min: 0, max: 1, lowerLabel: "0", upperLabel: "1")
+        }
+
+        let rawSpan = maxValue - minValue
+        let minimumSpan = max(maxValue * 0.08, 1)
+        let span = max(rawSpan, minimumSpan)
+        let padding = span * 0.12
+        var lower = minValue - padding
+        var upper = maxValue + padding
+
+        if minValue <= minimumSpan * 0.35 {
+            lower = 0
+            upper = max(upper, maxValue * 1.08)
+        } else {
+            lower = max(0, lower)
+        }
+
+        if upper <= lower {
+            upper = lower + 1
+        }
+
+        return ChartAxis(
+            min: lower,
+            max: upper,
+            lowerLabel: abbreviated(lower),
+            upperLabel: abbreviated(upper)
+        )
+    }
+
+    private func floorZeroAxisDomain(for values: [Double]) -> ChartAxis {
+        let maxValue = max(values.max() ?? 0, 1)
+        return ChartAxis(
+            min: 0,
+            max: maxValue,
+            lowerLabel: "0",
+            upperLabel: abbreviated(maxValue)
+        )
     }
 
     private func abbreviated(_ value: Double) -> String {

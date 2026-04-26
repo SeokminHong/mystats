@@ -12,10 +12,12 @@ final class MetricStore: ObservableObject {
 
     init() {
         let initialSnapshot = PreviewMetricFactory.snapshot()
-        self.snapshot = initialSnapshot
         var initialHistory = RingBuffer<MetricSnapshot>(capacity: 300)
-        initialHistory.append(initialSnapshot)
+        for snapshot in Self.seedRealtimeHistory(endingAt: initialSnapshot.timestamp, capacity: 300) {
+            initialHistory.append(snapshot)
+        }
         self.history = initialHistory
+        self.snapshot = initialHistory.elements.last ?? initialSnapshot
         self.minuteArchive = Self.seedMinuteArchive(endingAt: initialSnapshot.timestamp)
     }
 
@@ -76,6 +78,14 @@ final class MetricStore: ObservableObject {
         let count = 7 * 24 * 60
         return (0..<count).map { index in
             let timestamp = Date(timeIntervalSince1970: TimeInterval(end - (count - index) * 60))
+            return PreviewMetricFactory.snapshot(at: timestamp)
+        }
+    }
+
+    private static func seedRealtimeHistory(endingAt date: Date, capacity: Int) -> [MetricSnapshot] {
+        let end = Int(date.timeIntervalSince1970)
+        return (0..<capacity).map { index in
+            let timestamp = Date(timeIntervalSince1970: TimeInterval(end - (capacity - index - 1)))
             return PreviewMetricFactory.snapshot(at: timestamp)
         }
     }

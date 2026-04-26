@@ -641,9 +641,15 @@ chart scale:
 
 - CPU/GPU 사용률은 항상 0-100% 고정 축으로 표시한다.
 - 온도는 기본 0-110°C 고정 축으로 표시하되, Fahrenheit 표시 시 같은 물리 범위를 변환해서 표시한다.
-- network/disk byte rate는 현재 window의 최대값 기준 자동 축을 사용한다.
-- 자동 축 지표는 값이 모두 같을 때도 기준선이 중앙에서 사인파처럼 보이지 않도록 0을 하한으로 둔다.
+- network/disk byte rate는 현재 window의 min/max에 padding을 둔 adaptive 축을 사용한다.
+- adaptive 축은 값의 변화가 작아도 일직선처럼 눌리지 않도록 최소 표시 범위를 보장한다.
+- adaptive 축은 순간 spike 하나가 전체 그래프를 평평하게 만들지 않도록 outlier에 덜 민감한 robust domain을 사용한다. 실제 min/max는 summary stat에 표시한다.
+- 값이 실제로 0 근처에 걸쳐 있는 경우에는 0을 하한으로 포함하지만, 모든 값이 0에서 멀리 떨어져 있으면 무조건 0에 고정하지 않는다.
+- 메뉴바 sparkline은 숫자 축 label이 없는 trend preview이므로, 다중선 지표의 각 선을 독립적으로 정규화해 낮은 magnitude의 upload/write 선도 변화가 보이게 한다.
+- 메뉴바 sparkline은 5분 raw sample 전체를 그대로 1px 이하 간격에 밀어 넣지 않고, 작은 폭에서 선 모양이 뭉개지지 않도록 표시 가능한 point 수로 downsample한다.
 - preview/sample 데이터는 사인파 같은 주기 함수를 쓰지 않는다. 실제 collector가 들어오기 전에는 random walk와 occasional spike 형태의 deterministic preview를 사용한다.
+- preview mode는 앱 시작 직후 chart가 일직선처럼 보이지 않도록 최근 5분 raw sample을 deterministic preview data로 seed한다.
+- 실제 collector mode에서는 측정되지 않은 시간을 preview 값이나 0으로 채우지 않는다.
 
 chart gap policy:
 
@@ -718,6 +724,7 @@ C32 G18 61°
 - Disk 메뉴바 sparkline은 read와 write를 두 개의 선으로 렌더링한다.
 - 다중선 sparkline은 같은 단색 계열을 유지하고, 두 번째 선은 투명도 또는 dash로 구분한다.
 - metric별 설정에서 menu bar chart 표시 여부를 켜고 끌 수 있다.
+- Network/Disk처럼 다중선 메뉴바 chart가 있는 항목은 단일선 지표보다 넓은 chart 영역을 확보한다. 이 폭은 빈 여백이 아니라 실제 plot 영역이어야 한다.
 - 값이 `unsupported` 또는 `unavailable`인 항목은 메뉴바에서 숨길 수 있다.
 - 사용자가 settings window의 metric tab에서 메뉴바 표시 항목을 선택할 수 있다.
 - 네트워크와 디스크 단위는 읽기 쉬운 단위로 자동 축약한다.

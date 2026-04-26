@@ -39,13 +39,13 @@ extension MenuBarItem {
             return MetricPresentation(
                 title: "Net",
                 symbolName: "arrow.up.arrow.down",
-                menuWidth: 112,
+                menuWidth: 142,
                 tint: .green,
                 showsMenuBarIcon: false,
-                menuSparklineWidth: 46
+                menuSparklineWidth: 72
             )
         case .disk:
-            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 124, tint: .teal, menuSparklineWidth: 42)
+            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 150, tint: .teal, menuSparklineWidth: 64)
         }
     }
 }

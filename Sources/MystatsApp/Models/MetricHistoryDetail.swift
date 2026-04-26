@@ -33,6 +33,7 @@ struct MetricChartPoint {
 
 enum MetricChartScale {
     case fixed(domain: ClosedRange<Double>, lowerLabel: String, upperLabel: String)
+    case automaticAdaptive
     case automaticFloorZero
 }
 
@@ -195,8 +196,8 @@ enum MetricHistoryResolver {
             timeDomain: timeDomain,
             sampleCount: max(downloadValues.count, uploadValues.count),
             series: [
-                MetricChartSeries(id: "network-down", label: "Download", points: points(history) { $0.network?.downloadBytesPerSecond }, tint: .green, formattedCurrent: downloadValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero),
-                MetricChartSeries(id: "network-up", label: "Upload", points: points(history) { $0.network?.uploadBytesPerSecond }, tint: .mint, formattedCurrent: uploadValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero)
+                MetricChartSeries(id: "network-down", label: "Download", points: points(history) { $0.network?.downloadBytesPerSecond }, tint: .green, formattedCurrent: downloadValues.last.map(byteRate) ?? "N/A", scale: .automaticAdaptive),
+                MetricChartSeries(id: "network-up", label: "Upload", points: points(history) { $0.network?.uploadBytesPerSecond }, tint: .mint, formattedCurrent: uploadValues.last.map(byteRate) ?? "N/A", scale: .automaticAdaptive)
             ],
             stats: byteRateStats(downloadValues),
             detailRows: [
@@ -224,8 +225,8 @@ enum MetricHistoryResolver {
             timeDomain: timeDomain,
             sampleCount: max(readValues.count, writeValues.count),
             series: [
-                MetricChartSeries(id: "disk-read", label: "Read", points: points(history) { $0.disk?.readBytesPerSecond }, tint: .teal, formattedCurrent: readValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero),
-                MetricChartSeries(id: "disk-write", label: "Write", points: points(history) { $0.disk?.writeBytesPerSecond }, tint: .cyan, formattedCurrent: writeValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero)
+                MetricChartSeries(id: "disk-read", label: "Read", points: points(history) { $0.disk?.readBytesPerSecond }, tint: .teal, formattedCurrent: readValues.last.map(byteRate) ?? "N/A", scale: .automaticAdaptive),
+                MetricChartSeries(id: "disk-write", label: "Write", points: points(history) { $0.disk?.writeBytesPerSecond }, tint: .cyan, formattedCurrent: writeValues.last.map(byteRate) ?? "N/A", scale: .automaticAdaptive)
             ],
             stats: byteRateStats(readValues),
             detailRows: [

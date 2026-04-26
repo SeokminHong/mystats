@@ -7,7 +7,7 @@ struct SparklineChartView: View {
     var body: some View {
         Canvas { context, size in
             let sanitizedSeries = series
-                .map { $0.values.filter(\.isFinite) }
+                .map { ChartDomainResolver.downsample($0.values.filter(\.isFinite), maxCount: 32) }
                 .filter { $0.count > 1 }
 
             drawGrid(context: &context, size: size)
@@ -16,10 +16,6 @@ struct SparklineChartView: View {
                 return
             }
 
-            let allValues = sanitizedSeries.flatMap { $0 }
-            let minValue = allValues.min() ?? 0
-            let maxValue = allValues.max() ?? 1
-            let range = max(maxValue - minValue, 0.0001)
             let plotRect = CGRect(
                 x: 0.5,
                 y: 1,
@@ -28,11 +24,13 @@ struct SparklineChartView: View {
             )
 
             for (seriesIndex, values) in sanitizedSeries.enumerated() {
+                let axis = ChartDomainResolver.trendDomain(for: values)
+                let range = max(axis.upper - axis.lower, 0.0001)
                 let xStep = plotRect.width / CGFloat(values.count - 1)
                 var path = Path()
 
                 for (index, value) in values.enumerated() {
-                    let normalized = (value - minValue) / range
+                    let normalized = min(max((value - axis.lower) / range, 0), 1)
                     let point = CGPoint(
                         x: plotRect.minX + CGFloat(index) * xStep,
                         y: plotRect.maxY - CGFloat(normalized) * plotRect.height
@@ -49,7 +47,7 @@ struct SparklineChartView: View {
                     path,
                     with: .color(seriesColor(at: seriesIndex)),
                     style: StrokeStyle(
-                        lineWidth: seriesIndex == 0 ? 1 : 0.9,
+                        lineWidth: seriesIndex == 0 ? 1.2 : 1.05,
                         lineCap: .round,
                         lineJoin: .round,
                         dash: seriesIndex == 0 ? [] : [2, 2]
@@ -57,7 +55,7 @@ struct SparklineChartView: View {
                 )
             }
         }
-        .frame(height: 12)
+        .frame(height: 14)
         .accessibilityHidden(true)
     }
 

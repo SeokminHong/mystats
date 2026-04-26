@@ -349,7 +349,7 @@ private enum StatusItemImageRenderer {
         if itemSettings.showsMenuBarSparkline {
             drawSparkline(
                 display.chartSeries,
-                in: NSRect(x: width - chartWidth, y: 4, width: chartWidth - 1, height: 12),
+                in: NSRect(x: width - chartWidth, y: 3, width: chartWidth - 1, height: 14),
                 color: .labelColor
             )
         }
@@ -388,16 +388,12 @@ private enum StatusItemImageRenderer {
         drawSparklineGrid(in: rect, color: color.withAlphaComponent(0.18))
 
         let sanitizedSeries = series
-            .map { $0.values.filter(\.isFinite) }
+            .map { ChartDomainResolver.downsample($0.values.filter(\.isFinite), maxCount: 32) }
             .filter { $0.count > 1 }
         guard !sanitizedSeries.isEmpty else {
             return
         }
 
-        let allValues = sanitizedSeries.flatMap { $0 }
-        let minValue = allValues.min() ?? 0
-        let maxValue = allValues.max() ?? 1
-        let range = max(maxValue - minValue, 0.0001)
         let plotRect = NSRect(
             x: rect.minX + 0.5,
             y: rect.minY + 1,
@@ -406,11 +402,13 @@ private enum StatusItemImageRenderer {
         )
 
         for (seriesIndex, values) in sanitizedSeries.enumerated() {
+            let axis = ChartDomainResolver.trendDomain(for: values)
+            let range = max(axis.upper - axis.lower, 0.0001)
             let path = NSBezierPath()
             let xStep = plotRect.width / CGFloat(values.count - 1)
 
             for (index, value) in values.enumerated() {
-                let normalized = (value - minValue) / range
+                let normalized = min(max((value - axis.lower) / range, 0), 1)
                 let point = NSPoint(
                     x: plotRect.minX + CGFloat(index) * xStep,
                     y: plotRect.minY + CGFloat(normalized) * plotRect.height
@@ -429,7 +427,7 @@ private enum StatusItemImageRenderer {
             }
 
             (seriesIndex == 0 ? color : color.withAlphaComponent(0.58)).setStroke()
-            path.lineWidth = seriesIndex == 0 ? 1 : 0.9
+            path.lineWidth = seriesIndex == 0 ? 1.2 : 1.05
             path.lineCapStyle = .round
             path.lineJoinStyle = .round
             path.stroke()
