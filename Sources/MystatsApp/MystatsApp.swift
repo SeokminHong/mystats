@@ -15,14 +15,14 @@ struct MystatsApp: App {
 
         guard CommandLine.arguments.contains("--open-settings") else {
             if let item = Self.requestedMetricPopover() {
-                Task { @MainActor in
+                Self.afterLaunch {
                     StatusBarController.shared.showPopover(for: item)
                 }
             }
             return
         }
 
-        Task { @MainActor in
+        Self.afterLaunch {
             AppWindowController.showSettings(
                 metricStore: runtime.metricStore,
                 settingsStore: runtime.settingsStore
@@ -50,5 +50,13 @@ struct MystatsApp: App {
             let value = String(argument.dropFirst("--open-metric=".count))
             return MenuBarItem(rawValue: value)
         }.first
+    }
+
+    private static func afterLaunch(_ action: @escaping @MainActor () -> Void) {
+        DispatchQueue.main.async {
+            Task { @MainActor in
+                action()
+            }
+        }
     }
 }

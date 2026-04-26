@@ -672,6 +672,8 @@ CPU | GPU | Temp | Network
 - 각 metric item 클릭 시 해당 metric popover를 연다.
 - 다른 metric item을 클릭하면 기존 popover를 닫고 새 popover만 연다.
 - 같은 metric item을 다시 클릭하면 popover를 닫는다.
+- metric popover가 열리면 앱을 활성화하고 popover window를 key window로 만들어 키보드 포커스가 popover 안으로 들어가야 한다.
+- popover 외부를 클릭하거나 앱이 비활성화되면 popover는 닫혀야 한다.
 - 각 popover의 `Settings`는 설정 가능한 manager/settings window를 열고 앞으로 가져온다.
 - 각 popover의 `Quit mystats`는 앱을 종료한다.
 - 모든 metric item을 끄면 설정 접근 경로가 사라지므로, 마지막으로 켜진 metric item은 끌 수 없게 한다.
@@ -718,6 +720,8 @@ C32 G18 61°
 
 - 사용자가 CPU/GPU/Temperature/Network/Disk 메뉴바 항목을 클릭하면 해당 지표 전용 popover를 연다.
 - popover는 항상 하나만 열린다.
+- popover가 열린 직후 popover window가 key window가 되어 버튼, segmented control, scroll view가 즉시 상호작용 가능해야 한다.
+- 외부 앱, desktop, 설정 창 등 popover 바깥 영역을 클릭하면 popover는 닫힌다.
 - popover는 열려 있는 동안 ring buffer의 최신 sample을 계속 반영한다.
 - popover는 클릭한 지표의 히스토리만 우선 표시하고, 다른 지표의 전체 대시보드로 전환하지 않는다.
 - popover 상단에는 지표 icon, 지표명, collector status, manager window 버튼을 둔다.

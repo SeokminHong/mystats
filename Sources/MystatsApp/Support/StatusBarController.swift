@@ -13,6 +13,9 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private var statusItems: [MenuBarItem: StatusItemHost] = [:]
     private var activePopover: NSPopover?
     private var activeItem: MenuBarItem?
+    private var localEventMonitor: Any?
+    private var globalEventMonitor: Any?
+    private var appResignObserver: NSObjectProtocol?
 
     private override init() {
         super.init()
@@ -129,7 +132,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 460, height: 620)
         popover.delegate = self
-        popover.contentViewController = NSHostingController(
+        popover.contentViewController = PopoverHostingController(
             rootView: MetricPopoverView(item: item)
                 .environmentObject(metricStore)
                 .environmentObject(settingsStore)
@@ -140,6 +143,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         activePopover = popover
         activeItem = item
+        focusPopover(popover)
+        startPopoverEventMonitoring()
     }
 
     func showPopover(for item: MenuBarItem) {
@@ -151,16 +156,118 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     private func closePopover() {
+        stopPopoverEventMonitoring()
         activePopover?.close()
         activePopover = nil
         activeItem = nil
     }
 
+    private func focusPopover(_ popover: NSPopover) {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+
+        DispatchQueue.main.async { [weak popover] in
+            guard
+                let popover,
+                popover.isShown,
+                let window = popover.contentViewController?.view.window
+            else {
+                return
+            }
+
+            window.makeKey()
+            window.makeFirstResponder(popover.contentViewController?.view)
+        }
+    }
+
+    private func startPopoverEventMonitoring() {
+        stopPopoverEventMonitoring()
+
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]
+        ) { [weak self] event in
+            Task { @MainActor in
+                self?.handleLocalPopoverEvent(event)
+            }
+            return event
+        }
+
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.closePopover()
+            }
+        }
+
+        appResignObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didResignActiveNotification,
+            object: NSApp,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.closePopover()
+            }
+        }
+    }
+
+    private func stopPopoverEventMonitoring() {
+        if let localEventMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
+            self.localEventMonitor = nil
+        }
+
+        if let globalEventMonitor {
+            NSEvent.removeMonitor(globalEventMonitor)
+            self.globalEventMonitor = nil
+        }
+
+        if let appResignObserver {
+            NotificationCenter.default.removeObserver(appResignObserver)
+            self.appResignObserver = nil
+        }
+    }
+
+    private func handleLocalPopoverEvent(_ event: NSEvent) {
+        guard let popover = activePopover, popover.isShown else {
+            stopPopoverEventMonitoring()
+            return
+        }
+
+        if event.type == .keyDown, event.keyCode == 53 {
+            closePopover()
+            return
+        }
+
+        guard event.type == .leftMouseDown || event.type == .rightMouseDown || event.type == .otherMouseDown else {
+            return
+        }
+
+        if event.window == popover.contentViewController?.view.window {
+            return
+        }
+
+        if statusItems.values.contains(where: { $0.statusItem.button?.window == event.window }) {
+            return
+        }
+
+        closePopover()
+    }
+
     nonisolated func popoverDidClose(_ notification: Notification) {
         Task { @MainActor in
+            stopPopoverEventMonitoring()
             activePopover = nil
             activeItem = nil
         }
+    }
+}
+
+private final class PopoverHostingController<Content: View>: NSHostingController<Content> {
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        view.window?.makeKey()
+        view.window?.makeFirstResponder(view)
     }
 }
 
