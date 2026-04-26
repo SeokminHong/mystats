@@ -708,9 +708,12 @@ C32 G18 61°
 - 메뉴바 표시 모델은 모든 지표에 `primary/secondary`를 강제하지 않는다.
 - CPU처럼 주값과 하위 요약값이 있는 지표는 `primary + optional secondary` 레이아웃을 사용한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
+- Network 메뉴바 항목은 download/upload 화살표 자체가 방향과 지표 종류를 나타내므로 별도 leading system icon을 표시하지 않는다.
 - 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.
+- 메뉴바 sparkline은 배경색 변화에 흔들리지 않도록 지표별 accent color 대신 시스템 단색 foreground로 렌더링한다.
+- Network 메뉴바 sparkline은 download만이 아니라 download+upload 전체 처리량을 기준으로 갱신한다.
 - 값이 `unsupported` 또는 `unavailable`인 항목은 메뉴바에서 숨길 수 있다.
 - 사용자가 settings window의 metric tab에서 메뉴바 표시 항목을 선택할 수 있다.
 - 네트워크와 디스크 단위는 읽기 쉬운 단위로 자동 축약한다.

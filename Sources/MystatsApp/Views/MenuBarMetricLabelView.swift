@@ -18,10 +18,12 @@ struct MenuBarMetricLabelView: View {
         let itemSettings = settings.settings(for: item)
 
         HStack(spacing: 4) {
-            Image(systemName: presentation.symbolName)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(presentation.tint)
-                .frame(width: 12)
+            if presentation.showsMenuBarIcon {
+                Image(systemName: presentation.symbolName)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(presentation.tint)
+                    .frame(width: 12)
+            }
 
             menuText(
                 presentation: presentation,
@@ -31,8 +33,8 @@ struct MenuBarMetricLabelView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if itemSettings.showsMenuBarSparkline {
-                SparklineChartView(values: display.chartValues, tint: presentation.tint)
-                    .frame(width: 22)
+                SparklineChartView(values: display.chartValues, tint: .primary)
+                    .frame(width: presentation.menuSparklineWidth)
             }
         }
         .frame(width: presentation.menuWidth, alignment: .leading)

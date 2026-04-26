@@ -119,7 +119,11 @@ enum MetricDisplayResolver {
                 second: MetricMenuPeerValue(label: "↑", value: upload)
             ),
             status: network.status,
-            chartValues: history.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
+            chartValues: history.compactMap { snapshot in
+                snapshot.network.map {
+                    Double($0.downloadBytesPerSecond) + Double($0.uploadBytesPerSecond)
+                }
+            }
         )
     }
 

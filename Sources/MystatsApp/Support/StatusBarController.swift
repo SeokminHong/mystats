@@ -324,11 +324,13 @@ private enum StatusItemImageRenderer {
         NSColor.clear.setFill()
         NSRect(origin: .zero, size: size).fill()
 
-        drawSymbol(item, in: NSRect(x: 0, y: 4, width: 12, height: 12))
+        if item.presentation.showsMenuBarIcon {
+            drawSymbol(item, in: NSRect(x: 0, y: 4, width: 12, height: 12))
+        }
 
-        let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? 22 : 0
-        let textX: CGFloat = 15
-        let textWidth = width - textX - chartWidth - 2
+        let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
+        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 15 : 1
+        let textWidth = width - textX - chartWidth - 1
 
         switch display.menuLayout {
         case .single(let primary, let secondary, let secondaryConfigurable):
@@ -347,8 +349,8 @@ private enum StatusItemImageRenderer {
         if itemSettings.showsMenuBarSparkline {
             drawSparkline(
                 display.chartValues,
-                in: NSRect(x: width - chartWidth, y: 5, width: chartWidth - 2, height: 10),
-                color: tintColor(for: item)
+                in: NSRect(x: width - chartWidth, y: 4, width: chartWidth - 1, height: 12),
+                color: .labelColor
             )
         }
 
@@ -421,20 +423,6 @@ private enum StatusItemImageRenderer {
         }
     }
 
-    private static func tintColor(for item: MenuBarItem) -> NSColor {
-        switch item {
-        case .cpu:
-            return .systemBlue
-        case .gpu:
-            return .systemPurple
-        case .temperature:
-            return .systemOrange
-        case .network:
-            return .systemGreen
-        case .disk:
-            return .systemTeal
-        }
-    }
 }
 
 private final class StatusItemTarget: NSObject {
