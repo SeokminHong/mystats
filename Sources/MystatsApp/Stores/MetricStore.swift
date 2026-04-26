@@ -7,18 +7,31 @@ final class MetricStore: ObservableObject {
     @Published private(set) var snapshot: MetricSnapshot
     @Published private(set) var history: RingBuffer<MetricSnapshot>
 
+    private let persistentLogStore: PersistentMetricLogStore
     private var minuteArchive: [MetricSnapshot]
     private var previewTimer: Timer?
 
-    init() {
+    init(persistentLogStore: PersistentMetricLogStore = PersistentMetricLogStore()) {
+        self.persistentLogStore = persistentLogStore
         let initialSnapshot = PreviewMetricFactory.snapshot()
+        let persistedSnapshots = persistentLogStore.loadSnapshots(
+            since: initialSnapshot.timestamp.addingTimeInterval(-PersistentMetricLogStore.retention),
+            now: initialSnapshot.timestamp
+        )
         var initialHistory = RingBuffer<MetricSnapshot>(capacity: 300)
-        for snapshot in Self.seedRealtimeHistory(endingAt: initialSnapshot.timestamp, capacity: 300) {
+
+        let realtimeSeed = persistedSnapshots.isEmpty
+            ? Self.seedRealtimeHistory(endingAt: initialSnapshot.timestamp, capacity: 300)
+            : Array(persistedSnapshots.suffix(300))
+        for snapshot in realtimeSeed {
             initialHistory.append(snapshot)
         }
+
         self.history = initialHistory
         self.snapshot = initialHistory.elements.last ?? initialSnapshot
-        self.minuteArchive = Self.seedMinuteArchive(endingAt: initialSnapshot.timestamp)
+        self.minuteArchive = persistedSnapshots.isEmpty
+            ? Self.seedMinuteArchive(endingAt: initialSnapshot.timestamp)
+            : Self.minuteRollups(from: persistedSnapshots, endingAt: initialSnapshot.timestamp)
     }
 
     func startPreviewUpdates() {
@@ -39,6 +52,7 @@ final class MetricStore: ObservableObject {
         nextHistory.append(snapshot)
         history = nextHistory
         appendMinuteRollup(snapshot)
+        persistentLogStore.append(snapshot)
     }
 
     func history(for window: ChartTimeWindow) -> [MetricSnapshot] {
@@ -88,6 +102,23 @@ final class MetricStore: ObservableObject {
             let timestamp = Date(timeIntervalSince1970: TimeInterval(end - (capacity - index - 1)))
             return PreviewMetricFactory.snapshot(at: timestamp)
         }
+    }
+
+    private static func minuteRollups(from snapshots: [MetricSnapshot], endingAt date: Date) -> [MetricSnapshot] {
+        var rollups: [MetricSnapshot] = []
+        for snapshot in snapshots.sorted(by: { $0.timestamp < $1.timestamp }) {
+            if let last = rollups.last, minuteBucket(last.timestamp) == minuteBucket(snapshot.timestamp) {
+                rollups[rollups.count - 1] = snapshot
+            } else {
+                rollups.append(snapshot)
+            }
+        }
+
+        let cutoff = date.addingTimeInterval(-PersistentMetricLogStore.retention)
+        if let firstValid = rollups.firstIndex(where: { $0.timestamp >= cutoff }), firstValid > 0 {
+            rollups.removeFirst(firstValid)
+        }
+        return rollups
     }
 
     private static func minuteBucket(_ date: Date) -> Int {

@@ -100,7 +100,9 @@ MVP에서 제외하는 기능:
 - 팝오버가 닫혀 있을 때는 샘플링 주기를 낮춘다.
 - disk/network처럼 누적 counter 기반 지표는 비싼 재탐색을 매 샘플마다 반복하지 않는다.
 - 센서 목록 탐색, capability detection, 외장 디스크 목록 갱신처럼 비용이 큰 작업은 캐시하고 필요할 때만 갱신한다.
-- graph history는 메모리 ring buffer로 제한하며 영구 저장하지 않는다.
+- UI 렌더링용 graph history는 메모리 ring buffer와 minute rollup으로 제한한다.
+- 원본 metric snapshot은 앱/기기 재시작 후에도 확인할 수 있도록 제한된 파일 로그로 남긴다.
+- 파일 로그는 append-only JSON Lines 형식으로 작성하고, retention cleanup으로 저장량을 제한한다.
 
 우선순위:
 
@@ -618,18 +620,30 @@ VPN 트래픽:
 - 팝오버 닫힘 상태에서는 UI 갱신과 collector 실행을 최소화한다.
 - 장시간 실행 시 ring buffer 크기 이상으로 메모리가 증가하지 않아야 한다.
 
-## 17. Ring Buffer 정책
+## 17. History와 Metric Log 정책
 
 그래프는 최근 샘플만 보관한다.
 
 - 기본 표시 범위: 실시간, 최근 5분
 - 확장 표시 범위: 1일, 1주
-- 저장 위치: 메모리
-- 앱 재시작 후 그래프 히스토리 복원은 MVP에서 제외
+- UI history 저장 위치: 메모리
+- persistent metric log 저장 위치: `Application Support/mystats/MetricLogs`
+- persistent metric log 형식: 하루 단위 `.jsonl`
+- persistent metric log TTL: 7일
+- persistent metric log cleanup 주기: 앱 시작 시 + 6시간마다
+- 앱 재시작 후 최근 persistent metric log를 읽어 realtime ring buffer와 minute rollup을 복원한다.
 
 ring buffer는 값과 timestamp를 함께 저장한다. 샘플링 간격이 달라질 수 있으므로 배열 인덱스만으로 시간 간격을 추정하지 않는다.
 
 장기 window는 1초 raw sample을 모두 보관하지 않는다. 실시간 window는 짧은 raw ring buffer를 사용하고, 1일/1주 window는 분 단위 rollup snapshot을 사용한다. 이렇게 해야 1주 그래프를 제공하면서도 메뉴바 앱 자체의 메모리/CPU 비용을 통제할 수 있다.
+
+persistent metric log policy:
+
+- 샘플 collector가 생성한 snapshot만 파일에 기록한다. UI preview seed처럼 측정이 아닌 보정 데이터는 파일에 쓰지 않는다.
+- 로그 파일에는 비밀값, 사용자 파일 경로, 프로세스별 정보, 네트워크 목적지 같은 민감한 상세 정보를 저장하지 않는다.
+- network에는 byte rate와 interface 이름만 저장한다.
+- collector가 값을 제공하지 못한 지표는 `null`로 남겨 missing value와 `0`을 구분한다.
+- cleanup 실패는 앱 동작을 막지 않고 unified log에 원인을 남긴다.
 
 chart time window:
 
