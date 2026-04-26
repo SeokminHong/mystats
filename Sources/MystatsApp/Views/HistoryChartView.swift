@@ -8,7 +8,8 @@ struct HistoryChartView: View {
         VStack(alignment: .leading, spacing: 6) {
             chart
                 .frame(height: 96)
-                .padding(6)
+                .padding(.horizontal, 2)
+                .padding(.vertical, 4)
                 .background(.quaternary.opacity(0.24), in: RoundedRectangle(cornerRadius: 6))
 
             if !series.isEmpty {
@@ -19,7 +20,7 @@ struct HistoryChartView: View {
 
     private var chart: some View {
         Canvas { context, size in
-            let axisWidth: CGFloat = 30
+            let axisWidth: CGFloat = 24
             let plotWidth = max(size.width - axisWidth, 1)
             let plotSize = CGSize(width: plotWidth, height: size.height)
             let allValues = series.flatMap(\.values).filter { $0.isFinite }
@@ -204,7 +205,7 @@ struct HistoryChartView: View {
     }
 
     private func drawAxisLabels(context: GraphicsContext, size: CGSize, axis: ChartAxis) {
-        let x = size.width - 13
+        let x = size.width - 11
         context.draw(
             Text(axis.upperLabel)
                 .font(.caption2)

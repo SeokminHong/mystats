@@ -33,7 +33,9 @@ final class MetricStore: ObservableObject {
 
     func apply(_ snapshot: MetricSnapshot) {
         self.snapshot = snapshot
-        history.append(snapshot)
+        var nextHistory = history
+        nextHistory.append(snapshot)
+        history = nextHistory
         appendMinuteRollup(snapshot)
     }
 
@@ -41,12 +43,12 @@ final class MetricStore: ObservableObject {
         let now = snapshot.timestamp
         switch window {
         case .realtime:
-            return history.elements.filter { now.timeIntervalSince($0.timestamp) <= 60 }
+            return history.elements.filter { now.timeIntervalSince($0.timestamp) <= window.duration }
         case .day:
-            let cutoff = now.addingTimeInterval(-24 * 60 * 60)
+            let cutoff = now.addingTimeInterval(-window.duration)
             return minuteArchive.filter { $0.timestamp >= cutoff } + history.elements.suffix(1)
         case .week:
-            let cutoff = now.addingTimeInterval(-7 * 24 * 60 * 60)
+            let cutoff = now.addingTimeInterval(-window.duration)
             return minuteArchive.filter { $0.timestamp >= cutoff } + history.elements.suffix(1)
         }
     }

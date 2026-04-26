@@ -281,25 +281,11 @@ enum MetricHistoryResolver {
     }
 
     private static func timeDomain(for window: ChartTimeWindow, endingAt end: Date) -> ClosedRange<Date> {
-        switch window {
-        case .realtime:
-            return end.addingTimeInterval(-60)...end
-        case .day:
-            return end.addingTimeInterval(-24 * 60 * 60)...end
-        case .week:
-            return end.addingTimeInterval(-7 * 24 * 60 * 60)...end
-        }
+        end.addingTimeInterval(-window.duration)...end
     }
 
     private static func windowLabel(_ window: ChartTimeWindow) -> String {
-        switch window {
-        case .realtime:
-            return "Last 60s"
-        case .day:
-            return "Last 24h"
-        case .week:
-            return "Last 7d"
-        }
+        window.summaryLabel
     }
 
     private static func busiestCoreLabel(_ cpu: CPUMetrics?) -> String {

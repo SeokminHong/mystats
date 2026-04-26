@@ -116,4 +116,26 @@ public enum ChartTimeWindow: String, CaseIterable, Codable, Equatable, Identifia
     case week
 
     public var id: String { rawValue }
+
+    public var duration: TimeInterval {
+        switch self {
+        case .realtime:
+            return 5 * 60
+        case .day:
+            return 24 * 60 * 60
+        case .week:
+            return 7 * 24 * 60 * 60
+        }
+    }
+
+    public var summaryLabel: String {
+        switch self {
+        case .realtime:
+            return "Last 5m"
+        case .day:
+            return "Last 24h"
+        case .week:
+            return "Last 7d"
+        }
+    }
 }
