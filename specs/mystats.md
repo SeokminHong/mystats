@@ -728,6 +728,8 @@ C32 G18 61°
 - 메뉴바 텍스트는 현재 상태 요약을 담되 1-2줄 안에 들어오게 압축한다.
 - 메뉴바 표시 모델은 모든 지표에 `primary/secondary`를 강제하지 않는다.
 - CPU처럼 주값과 하위 요약값이 있는 지표는 `primary + optional secondary` 레이아웃을 사용한다.
+- secondary 값이 없거나 설정에서 secondary 표시를 끈 경우 메뉴바 두 번째 줄에 `Live`, `Experimental`, `Unsupported`, `Unavailable` 같은 상태 텍스트를 대신 표시하지 않는다.
+- metric status는 popover header, detail section, manager window에서만 표시한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
 - Network 메뉴바 항목은 download/upload 화살표 자체가 방향과 지표 종류를 나타내므로 별도 leading system icon을 표시하지 않는다.
 - 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.

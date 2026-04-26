@@ -340,11 +340,10 @@ private enum StatusItemImageRenderer {
         switch display.menuLayout {
         case .single(let primary, let secondary, let secondaryConfigurable):
             let primaryLine = "\(item.presentation.title) \(primary)"
-            let secondaryLine = secondaryConfigurable && itemSettings.showsSecondaryValue
-                ? secondary
-                : statusLabel(display.status)
             drawText(primaryLine, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), size: 8.8, color: .labelColor, weight: .semibold)
-            drawText(secondaryLine ?? "", in: NSRect(x: textX, y: 2, width: textWidth, height: 8), size: 7.5, color: .secondaryLabelColor, weight: .regular)
+            if secondaryConfigurable, itemSettings.showsSecondaryValue, let secondary {
+                drawText(secondary, in: NSRect(x: textX, y: 2, width: textWidth, height: 8), size: 7.5, color: .secondaryLabelColor, weight: .regular)
+            }
 
         case .paired(let first, let second):
             drawPeerValue(first, in: NSRect(x: textX, y: 10, width: textWidth, height: 9))
@@ -448,19 +447,6 @@ private enum StatusItemImageRenderer {
             path.line(to: NSPoint(x: rect.maxX, y: y))
             path.lineWidth = 0.5
             path.stroke()
-        }
-    }
-
-    private static func statusLabel(_ status: MetricStatus) -> String {
-        switch status {
-        case .available:
-            return "Live"
-        case .experimental:
-            return "Experimental"
-        case .unsupported:
-            return "Unsupported"
-        case .unavailable:
-            return "Unavailable"
         }
     }
 

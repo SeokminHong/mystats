@@ -58,12 +58,11 @@ struct MenuBarMetricLabelView: View {
                 }
                 .font(.system(size: 9, weight: .semibold))
 
-                let secondaryLine = secondaryConfigurable && itemSettings.showsSecondaryValue
-                    ? secondary
-                    : statusLabel(display.status)
-                Text(secondaryLine ?? statusLabel(display.status))
-                    .font(.system(size: 7.5, weight: .regular))
-                    .foregroundStyle(.secondary)
+                if secondaryConfigurable, itemSettings.showsSecondaryValue, let secondary {
+                    Text(secondary)
+                        .font(.system(size: 7.5, weight: .regular))
+                        .foregroundStyle(.secondary)
+                }
             }
             .monospacedDigit()
             .lineLimit(1)
@@ -91,16 +90,4 @@ struct MenuBarMetricLabelView: View {
         .font(.system(size: 8.4, weight: .semibold))
     }
 
-    private func statusLabel(_ status: MetricStatus) -> String {
-        switch status {
-        case .available:
-            return "Live"
-        case .experimental:
-            return "Experimental"
-        case .unsupported:
-            return "Unsupported"
-        case .unavailable:
-            return "Unavailable"
-        }
-    }
 }
