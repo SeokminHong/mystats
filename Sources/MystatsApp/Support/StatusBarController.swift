@@ -353,20 +353,21 @@ enum StatusItemImageRenderer {
         let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
         let textX: CGFloat = item.presentation.showsMenuBarIcon ? 15 : 1
         let textWidth = width - textX - chartWidth - 1
+        let textAlignment: NSTextAlignment = itemSettings.showsMenuBarSparkline ? .right : .left
 
         switch display.menuLayout {
         case .single(let primary, let secondary, let secondaryConfigurable):
             let primaryLine = "\(item.presentation.title) \(primary)"
             if secondaryConfigurable, itemSettings.showsSecondaryValue, let secondary {
-                drawText(primaryLine, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), size: 8.8, color: .labelColor, weight: .semibold)
-                drawText(secondary, in: NSRect(x: textX, y: 2, width: textWidth, height: 8), size: 7.5, color: .secondaryLabelColor, weight: .regular)
+                drawText(primaryLine, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), size: 8.8, color: .labelColor, weight: .semibold, alignment: textAlignment)
+                drawText(secondary, in: NSRect(x: textX, y: 2, width: textWidth, height: 8), size: 7.5, color: .secondaryLabelColor, weight: .regular, alignment: textAlignment)
             } else {
-                drawText(primaryLine, in: NSRect(x: textX, y: 5, width: textWidth, height: 10), size: 8.8, color: .labelColor, weight: .semibold)
+                drawText(primaryLine, in: NSRect(x: textX, y: 5, width: textWidth, height: 10), size: 8.8, color: .labelColor, weight: .semibold, alignment: textAlignment)
             }
 
         case .paired(let first, let second):
-            drawPeerValue(first, in: NSRect(x: textX, y: 10, width: textWidth, height: 9))
-            drawPeerValue(second, in: NSRect(x: textX, y: 2, width: textWidth, height: 9))
+            drawPeerValue(first, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), valueAlignment: textAlignment)
+            drawPeerValue(second, in: NSRect(x: textX, y: 2, width: textWidth, height: 9), valueAlignment: textAlignment)
         }
 
         if itemSettings.showsMenuBarSparkline {
@@ -390,10 +391,12 @@ enum StatusItemImageRenderer {
         in rect: NSRect,
         size: CGFloat,
         color: NSColor,
-        weight: NSFont.Weight
+        weight: NSFont.Weight,
+        alignment: NSTextAlignment = .left
     ) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byClipping
+        paragraph.alignment = alignment
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight),
             .foregroundColor: color,
@@ -402,9 +405,13 @@ enum StatusItemImageRenderer {
         text.draw(in: rect, withAttributes: attributes)
     }
 
-    private static func drawPeerValue(_ value: MetricMenuPeerValue, in rect: NSRect) {
+    private static func drawPeerValue(
+        _ value: MetricMenuPeerValue,
+        in rect: NSRect,
+        valueAlignment: NSTextAlignment
+    ) {
         drawText(value.label, in: NSRect(x: rect.minX, y: rect.minY, width: 10, height: rect.height), size: 8.4, color: .secondaryLabelColor, weight: .semibold)
-        drawText(value.value, in: NSRect(x: rect.minX + 12, y: rect.minY, width: rect.width - 12, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold)
+        drawText(value.value, in: NSRect(x: rect.minX + 12, y: rect.minY, width: rect.width - 12, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold, alignment: valueAlignment)
     }
 
     private static func drawSparkline(_ series: [MetricMenuChartSeries], in rect: NSRect, color: NSColor) {

@@ -17,7 +17,7 @@ struct MetricPresentation {
         compactMenuWidth: CGFloat? = nil,
         tint: Color,
         showsMenuBarIcon: Bool = true,
-        menuSparklineWidth: CGFloat = 22
+        menuSparklineWidth: CGFloat = 42
     ) {
         self.title = title
         self.symbolName = symbolName
@@ -37,19 +37,19 @@ extension MenuBarItem {
     var presentation: MetricPresentation {
         switch self {
         case .cpu:
-            return MetricPresentation(title: "CPU", symbolName: "cpu", menuWidth: 92, tint: .blue)
+            return MetricPresentation(title: "CPU", symbolName: "cpu", menuWidth: 112, tint: .blue)
         case .gpu:
-            return MetricPresentation(title: "GPU", symbolName: "display", menuWidth: 86, tint: .purple)
+            return MetricPresentation(title: "GPU", symbolName: "display", menuWidth: 106, tint: .purple)
         case .temperature:
-            return MetricPresentation(title: "Temp", symbolName: "thermometer.medium", menuWidth: 86, tint: .orange)
+            return MetricPresentation(title: "Temp", symbolName: "thermometer.medium", menuWidth: 106, tint: .orange)
         case .network:
             return MetricPresentation(
                 title: "Net",
                 symbolName: "arrow.up.arrow.down",
-                menuWidth: 108,
+                menuWidth: 102,
                 tint: .green,
                 showsMenuBarIcon: false,
-                menuSparklineWidth: 48
+                menuSparklineWidth: 42
             )
         case .disk:
             return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 128, tint: .teal, menuSparklineWidth: 42)
