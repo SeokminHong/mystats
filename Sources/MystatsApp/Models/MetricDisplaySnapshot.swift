@@ -5,11 +5,15 @@ struct MetricDisplaySnapshot {
     let secondaryValue: String?
     let menuLayout: MetricMenuLayout
     let status: MetricStatus
-    let chartValues: [Double]
+    let chartSeries: [MetricMenuChartSeries]
 
     var hasConfigurableSecondaryValue: Bool {
         menuLayout.hasConfigurableSecondaryValue
     }
+}
+
+struct MetricMenuChartSeries {
+    let values: [Double]
 }
 
 enum MetricMenuLayout {
@@ -64,7 +68,7 @@ enum MetricDisplayResolver {
             secondaryValue: secondary,
             menuLayout: .single(primary: primary, secondary: secondary, secondaryConfigurable: true),
             status: cpu.status,
-            chartValues: history.compactMap { $0.cpu?.totalUsage }
+            chartSeries: [MetricMenuChartSeries(values: history.compactMap { $0.cpu?.totalUsage })]
         )
     }
 
@@ -79,7 +83,7 @@ enum MetricDisplayResolver {
             secondaryValue: nil,
             menuLayout: .single(primary: primary, secondary: nil, secondaryConfigurable: false),
             status: gpu.status,
-            chartValues: history.compactMap { $0.gpu?.totalUsage }
+            chartSeries: [MetricMenuChartSeries(values: history.compactMap { $0.gpu?.totalUsage })]
         )
     }
 
@@ -100,7 +104,7 @@ enum MetricDisplayResolver {
             secondaryValue: nil,
             menuLayout: .single(primary: primary, secondary: nil, secondaryConfigurable: false),
             status: thermal.status,
-            chartValues: history.compactMap { $0.thermal?.cpuCelsius }
+            chartSeries: [MetricMenuChartSeries(values: history.compactMap { $0.thermal?.cpuCelsius })]
         )
     }
 
@@ -119,11 +123,14 @@ enum MetricDisplayResolver {
                 second: MetricMenuPeerValue(label: "↑", value: upload)
             ),
             status: network.status,
-            chartValues: history.compactMap { snapshot in
-                snapshot.network.map {
-                    Double($0.downloadBytesPerSecond) + Double($0.uploadBytesPerSecond)
-                }
-            }
+            chartSeries: [
+                MetricMenuChartSeries(
+                    values: history.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
+                ),
+                MetricMenuChartSeries(
+                    values: history.compactMap { $0.network?.uploadBytesPerSecond }.map(Double.init)
+                )
+            ]
         )
     }
 
@@ -142,7 +149,14 @@ enum MetricDisplayResolver {
                 second: MetricMenuPeerValue(label: "W", value: write)
             ),
             status: disk.status,
-            chartValues: history.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
+            chartSeries: [
+                MetricMenuChartSeries(
+                    values: history.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
+                ),
+                MetricMenuChartSeries(
+                    values: history.compactMap { $0.disk?.writeBytesPerSecond }.map(Double.init)
+                )
+            ]
         )
     }
 
@@ -152,7 +166,7 @@ enum MetricDisplayResolver {
             secondaryValue: nil,
             menuLayout: .single(primary: "N/A", secondary: nil, secondaryConfigurable: false),
             status: .unavailable(reason: "No sample"),
-            chartValues: []
+            chartSeries: []
         )
     }
 

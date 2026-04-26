@@ -30,10 +30,9 @@ struct MenuBarMetricLabelView: View {
                 display: display,
                 itemSettings: itemSettings
             )
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             if itemSettings.showsMenuBarSparkline {
-                SparklineChartView(values: display.chartValues, tint: .primary)
+                SparklineChartView(series: display.chartSeries, tint: .primary)
                     .frame(width: presentation.menuSparklineWidth)
             }
         }

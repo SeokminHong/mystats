@@ -713,7 +713,11 @@ C32 G18 61°
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.
 - 메뉴바 sparkline은 배경색 변화에 흔들리지 않도록 지표별 accent color 대신 시스템 단색 foreground로 렌더링한다.
-- Network 메뉴바 sparkline은 download만이 아니라 download+upload 전체 처리량을 기준으로 갱신한다.
+- 메뉴바 sparkline은 데이터 선보다 약한 baseline/midline grid를 포함해 스케일을 읽을 수 있게 한다.
+- Network 메뉴바 sparkline은 download와 upload를 두 개의 선으로 렌더링한다.
+- Disk 메뉴바 sparkline은 read와 write를 두 개의 선으로 렌더링한다.
+- 다중선 sparkline은 같은 단색 계열을 유지하고, 두 번째 선은 투명도 또는 dash로 구분한다.
+- metric별 설정에서 menu bar chart 표시 여부를 켜고 끌 수 있다.
 - 값이 `unsupported` 또는 `unavailable`인 항목은 메뉴바에서 숨길 수 있다.
 - 사용자가 settings window의 metric tab에서 메뉴바 표시 항목을 선택할 수 있다.
 - 네트워크와 디스크 단위는 읽기 쉬운 단위로 자동 축약한다.
@@ -792,7 +796,7 @@ manager/settings window 기능:
 - CPU, GPU, Temperature, Network, Disk 메뉴바 항목 on/off
 - metric별 menu item detail 설정
   - 계층형 secondary value가 있는 지표의 secondary 표시
-  - menu sparkline 표시
+  - menu bar chart 표시
   - popover detail section 표시
 - 각 항목의 고정폭 메뉴바 폭 표시
 - 샘플링 모드 설정

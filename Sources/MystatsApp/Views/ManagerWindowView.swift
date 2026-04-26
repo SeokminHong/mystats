@@ -152,7 +152,7 @@ private struct MetricSettingsTab: View {
                 if display.hasConfigurableSecondaryValue {
                     Toggle("Show secondary value", isOn: metricSettingsBinding(\.showsSecondaryValue))
                 }
-                Toggle("Show sparkline", isOn: metricSettingsBinding(\.showsMenuBarSparkline))
+                Toggle("Show menu bar chart", isOn: metricSettingsBinding(\.showsMenuBarSparkline))
 
                 LabeledContent("Fixed width") {
                     Text("\(Int(presentation.menuWidth)) pt")

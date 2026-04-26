@@ -348,7 +348,7 @@ private enum StatusItemImageRenderer {
 
         if itemSettings.showsMenuBarSparkline {
             drawSparkline(
-                display.chartValues,
+                display.chartSeries,
                 in: NSRect(x: width - chartWidth, y: 4, width: chartWidth - 1, height: 12),
                 color: .labelColor
             )
@@ -384,30 +384,68 @@ private enum StatusItemImageRenderer {
         drawText(value.value, in: NSRect(x: rect.minX + 12, y: rect.minY, width: rect.width - 12, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold)
     }
 
-    private static func drawSparkline(_ values: [Double], in rect: NSRect, color: NSColor) {
-        let sanitized = values.filter(\.isFinite)
-        guard sanitized.count > 1 else {
+    private static func drawSparkline(_ series: [MetricMenuChartSeries], in rect: NSRect, color: NSColor) {
+        drawSparklineGrid(in: rect, color: color.withAlphaComponent(0.18))
+
+        let sanitizedSeries = series
+            .map { $0.values.filter(\.isFinite) }
+            .filter { $0.count > 1 }
+        guard !sanitizedSeries.isEmpty else {
             return
         }
 
-        let minValue = sanitized.min() ?? 0
-        let maxValue = sanitized.max() ?? 1
+        let allValues = sanitizedSeries.flatMap { $0 }
+        let minValue = allValues.min() ?? 0
+        let maxValue = allValues.max() ?? 1
         let range = max(maxValue - minValue, 0.0001)
-        let path = NSBezierPath()
-        let xStep = rect.width / CGFloat(sanitized.count - 1)
+        let plotRect = NSRect(
+            x: rect.minX + 0.5,
+            y: rect.minY + 1,
+            width: max(rect.width - 1, 1),
+            height: max(rect.height - 2, 1)
+        )
 
-        for (index, value) in sanitized.enumerated() {
-            let normalized = (value - minValue) / range
-            let point = NSPoint(
-                x: rect.minX + CGFloat(index) * xStep,
-                y: rect.minY + CGFloat(normalized) * rect.height
-            )
-            index == 0 ? path.move(to: point) : path.line(to: point)
+        for (seriesIndex, values) in sanitizedSeries.enumerated() {
+            let path = NSBezierPath()
+            let xStep = plotRect.width / CGFloat(values.count - 1)
+
+            for (index, value) in values.enumerated() {
+                let normalized = (value - minValue) / range
+                let point = NSPoint(
+                    x: plotRect.minX + CGFloat(index) * xStep,
+                    y: plotRect.minY + CGFloat(normalized) * plotRect.height
+                )
+
+                if index == 0 {
+                    path.move(to: point)
+                } else {
+                    path.line(to: point)
+                }
+            }
+
+            if seriesIndex > 0 {
+                let dash: [CGFloat] = [2, 2]
+                path.setLineDash(dash, count: dash.count, phase: 0)
+            }
+
+            (seriesIndex == 0 ? color : color.withAlphaComponent(0.58)).setStroke()
+            path.lineWidth = seriesIndex == 0 ? 1 : 0.9
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            path.stroke()
         }
+    }
 
+    private static func drawSparklineGrid(in rect: NSRect, color: NSColor) {
         color.setStroke()
-        path.lineWidth = 1
-        path.stroke()
+
+        for y in [rect.minY + 0.5, rect.midY] {
+            let path = NSBezierPath()
+            path.move(to: NSPoint(x: rect.minX, y: y))
+            path.line(to: NSPoint(x: rect.maxX, y: y))
+            path.lineWidth = 0.5
+            path.stroke()
+        }
     }
 
     private static func statusLabel(_ status: MetricStatus) -> String {

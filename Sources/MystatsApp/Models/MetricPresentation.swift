@@ -42,10 +42,10 @@ extension MenuBarItem {
                 menuWidth: 112,
                 tint: .green,
                 showsMenuBarIcon: false,
-                menuSparklineWidth: 34
+                menuSparklineWidth: 46
             )
         case .disk:
-            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 124, tint: .teal)
+            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 124, tint: .teal, menuSparklineWidth: 42)
         }
     }
 }
