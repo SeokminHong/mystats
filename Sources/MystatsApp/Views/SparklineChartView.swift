@@ -35,10 +35,9 @@ struct SparklineChartView: View {
                 }
             }
 
-            context.stroke(path, with: .color(tint), lineWidth: 1.4)
+            context.stroke(path, with: .color(tint), lineWidth: 1)
         }
-        .frame(height: 18)
+        .frame(height: 12)
         .accessibilityHidden(true)
     }
 }
-

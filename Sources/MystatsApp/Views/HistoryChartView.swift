@@ -4,11 +4,11 @@ struct HistoryChartView: View {
     let series: [MetricChartSeries]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             chart
-                .frame(height: 104)
-                .padding(10)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                .frame(height: 96)
+                .padding(6)
+                .background(.quaternary.opacity(0.24), in: RoundedRectangle(cornerRadius: 6))
 
             if !series.isEmpty {
                 legend
@@ -18,7 +18,8 @@ struct HistoryChartView: View {
 
     private var chart: some View {
         Canvas { context, size in
-            let plotWidth = max(size.width - 42, 1)
+            let axisWidth: CGFloat = 30
+            let plotWidth = max(size.width - axisWidth, 1)
             let plotSize = CGSize(width: plotWidth, height: size.height)
             let allValues = series.flatMap(\.values).filter { $0.isFinite }
             guard !allValues.isEmpty, allValues.count > 1 else {
@@ -27,6 +28,7 @@ struct HistoryChartView: View {
             }
 
             let axis = axisDomain(for: allValues)
+            drawChartBackground(context: context, size: plotSize)
             drawGrid(context: context, size: plotSize)
             drawAxisLabels(context: context, size: size, axis: axis)
 
@@ -50,30 +52,37 @@ struct HistoryChartView: View {
                     }
                 }
 
-                context.stroke(path, with: .color(line.tint), lineWidth: 2)
+                context.stroke(path, with: .color(line.tint), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
             }
         }
     }
 
     private var legend: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 9) {
             ForEach(series) { line in
-                HStack(spacing: 5) {
+                HStack(spacing: 4) {
                     Circle()
                         .fill(line.tint)
-                        .frame(width: 7, height: 7)
+                        .frame(width: 6, height: 6)
                     Text(line.label)
                     Text(line.formattedCurrent)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
-                .font(.caption)
+                .font(.caption2)
             }
         }
     }
 
+    private func drawChartBackground(context: GraphicsContext, size: CGSize) {
+        context.fill(
+            Path(CGRect(origin: .zero, size: size)),
+            with: .color(.primary.opacity(0.025))
+        )
+    }
+
     private func drawGrid(context: GraphicsContext, size: CGSize) {
-        let gridColor = Color.secondary.opacity(0.18)
+        let gridColor = Color.secondary.opacity(0.12)
         for index in 0...4 {
             let y = size.height * CGFloat(index) / 4
             var path = Path()
@@ -91,19 +100,19 @@ struct HistoryChartView: View {
     }
 
     private func drawAxisLabels(context: GraphicsContext, size: CGSize, axis: ChartAxis) {
-        let x = size.width - 18
+        let x = size.width - 13
         context.draw(
             Text(axis.upperLabel)
                 .font(.caption2)
                 .foregroundColor(.secondary),
-            at: CGPoint(x: x, y: 6),
+            at: CGPoint(x: x, y: 5),
             anchor: .center
         )
         context.draw(
             Text(axis.lowerLabel)
                 .font(.caption2)
                 .foregroundColor(.secondary),
-            at: CGPoint(x: x, y: size.height - 7),
+            at: CGPoint(x: x, y: size.height - 6),
             anchor: .center
         )
     }

@@ -689,6 +689,7 @@ C32 G18 61°
 
 - 메뉴바 항목은 지표별로 고정폭을 가진다.
 - 고정폭은 AppKit `NSStatusItem.length`로 강제하며, 표시값이 변해도 레이아웃 시프트가 발생하지 않도록 지표별 최대 예상 문자열 기준으로 정한다.
+- status item 내부 렌더링은 불필요한 좌우 padding을 두지 않고, icon/text/sparkline을 1-2px 단위 여백으로 조밀하게 배치한다.
 - 숫자는 monospaced digit을 사용한다.
 - 메뉴바 텍스트는 현재 상태 요약을 담되 1-2줄 안에 들어오게 압축한다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
@@ -710,6 +711,8 @@ C32 G18 61°
 - popover 상단에는 지표 icon, 지표명, collector status, manager window 버튼을 둔다.
 - popover 본문에는 현재값, 최근 측정 기간, sample 수, live chart, min/max/avg 요약, 지표별 세부 정보를 둔다.
 - chart는 ring buffer timestamp 기준 최근 데이터를 사용하며, 샘플 간격이 변해도 배열 인덱스만으로 시간을 설명하지 않는다.
+- chart 영역은 padding을 작게 유지하고 축 label은 오른쪽 좁은 gutter 안에 배치한다.
+- chart grid는 데이터보다 진하게 보이면 안 되며, series line과 legend가 우선 읽혀야 한다.
 - network와 disk처럼 방향이 둘인 지표는 download/upload 또는 read/write를 같은 chart 안에 별도 series로 표시한다.
 - CPU는 total usage를 주 series로 표시하고 P-core/E-core 평균은 세부 정보와 현재 코어 목록으로 표시한다.
 - Temperature는 CPU/GPU/SoC 온도를 별도 series로 표시하되, 불확실하거나 없는 값은 표시하지 않는다.

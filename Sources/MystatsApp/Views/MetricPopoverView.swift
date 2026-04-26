@@ -25,7 +25,7 @@ struct MetricPopoverView: View {
         let itemSettings = settingsStore.settings.settings(for: item)
 
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 10) {
                 header(presentation: presentation, display: display)
 
                 currentValue(detail)
@@ -42,7 +42,7 @@ struct MetricPopoverView: View {
                     metricDetail
                 }
             }
-            .padding(16)
+            .padding(12)
         }
     }
 
@@ -56,9 +56,9 @@ struct MetricPopoverView: View {
     }
 
     private func header(presentation: MetricPresentation, display: MetricDisplaySnapshot) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: presentation.symbolName)
-                .font(.system(size: 22, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(presentation.tint)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -92,10 +92,10 @@ struct MetricPopoverView: View {
 
     private func currentValue(_ detail: MetricHistoryDetail) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(detail.currentPrimary)
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                        .font(.system(size: 30, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                     if let secondary = detail.currentSecondary {
                         Text(secondary)
@@ -117,7 +117,7 @@ struct MetricPopoverView: View {
     }
 
     private func summaryGrid(_ stats: [MetricSummaryStat]) -> some View {
-        Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+        Grid(horizontalSpacing: 8, verticalSpacing: 8) {
             GridRow {
                 ForEach(stats.prefix(4)) { stat in
                     VStack(alignment: .leading, spacing: 3) {
@@ -130,15 +130,15 @@ struct MetricPopoverView: View {
                             .minimumScaleFactor(0.75)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
-                    .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 7))
+                    .padding(6)
+                    .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
                 }
             }
         }
     }
 
     private func detailRows(_ rows: [MetricDetailRow]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Details")
                 .font(.headline)
             ForEach(rows) { row in

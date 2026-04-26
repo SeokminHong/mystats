@@ -209,7 +209,7 @@ private enum StatusItemImageRenderer {
         itemSettings: MetricItemSettings
     ) -> NSImage {
         let width = item.presentation.menuWidth
-        let size = NSSize(width: width, height: 22)
+        let size = NSSize(width: width, height: 20)
         let image = NSImage(size: size)
         image.lockFocus()
         defer { image.unlockFocus() }
@@ -217,21 +217,22 @@ private enum StatusItemImageRenderer {
         NSColor.clear.setFill()
         NSRect(origin: .zero, size: size).fill()
 
-        drawSymbol(item, in: NSRect(x: 1, y: 4, width: 14, height: 14))
+        drawSymbol(item, in: NSRect(x: 0, y: 4, width: 12, height: 12))
 
         let primary = "\(item.presentation.title) \(display.primaryValue)"
         let secondary = itemSettings.showsSecondaryValue
             ? display.secondaryValue
             : statusLabel(display.status)
-        let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? 30 : 0
-        let textWidth = width - 21 - chartWidth - 4
-        drawText(primary, in: NSRect(x: 20, y: 10, width: textWidth, height: 10), size: 9.5, color: .labelColor, weight: .semibold)
-        drawText(secondary ?? "", in: NSRect(x: 20, y: 1, width: textWidth, height: 9), size: 8, color: .secondaryLabelColor, weight: .regular)
+        let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? 22 : 0
+        let textX: CGFloat = 15
+        let textWidth = width - textX - chartWidth - 2
+        drawText(primary, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), size: 8.8, color: .labelColor, weight: .semibold)
+        drawText(secondary ?? "", in: NSRect(x: textX, y: 2, width: textWidth, height: 8), size: 7.5, color: .secondaryLabelColor, weight: .regular)
 
         if itemSettings.showsMenuBarSparkline {
             drawSparkline(
                 display.chartValues,
-                in: NSRect(x: width - 31, y: 4, width: 27, height: 14),
+                in: NSRect(x: width - chartWidth, y: 5, width: chartWidth - 2, height: 10),
                 color: tintColor(for: item)
             )
         }
@@ -283,7 +284,7 @@ private enum StatusItemImageRenderer {
         }
 
         color.setStroke()
-        path.lineWidth = 1.2
+        path.lineWidth = 1
         path.stroke()
     }
 
