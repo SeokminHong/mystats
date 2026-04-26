@@ -4,7 +4,6 @@ import MystatsCore
 struct MetricPopoverView: View {
     let item: MenuBarItem
 
-    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var metricStore: MetricStore
     @EnvironmentObject private var settingsStore: SettingsStore
 
@@ -58,9 +57,19 @@ struct MetricPopoverView: View {
             Spacer()
 
             Button {
-                openWindow(id: "manager")
+                AppWindowController.showSettings(
+                    metricStore: metricStore,
+                    settingsStore: settingsStore
+                )
             } label: {
-                Label("Manage", systemImage: "slider.horizontal.3")
+                Label("Settings", systemImage: "slider.horizontal.3")
+            }
+            .buttonStyle(.bordered)
+
+            Button(role: .destructive) {
+                AppWindowController.quit()
+            } label: {
+                Image(systemName: "power")
             }
             .buttonStyle(.bordered)
         }

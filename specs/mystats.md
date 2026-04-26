@@ -643,6 +643,15 @@ CPU | GPU | Temp | Network
 
 manager window를 열기 위한 작은 control 메뉴바 항목은 항상 표시한다. 모든 지표 항목을 끈 상태에서도 사용자가 다시 설정을 열 수 있어야 하기 때문이다.
 
+control 메뉴바 항목 인터랙션:
+
+- `Open Settings`는 설정 가능한 manager window를 열고 앞으로 가져온다.
+- `Metric Manager`는 같은 설정 창을 열고 메뉴바 항목 관리 영역을 보여준다.
+- `Quit mystats`는 앱을 종료한다.
+- 버튼 클릭이 LSUIElement/menu-bar-only 상태에서 무반응처럼 보이지 않도록 window open 시 앱을 activate한다.
+- 초기 개발 단계의 앱 번들은 regular macOS app으로 동작하며 Dock 아이콘과 설정 창을 제공한다.
+- 설정 창은 regular macOS window로 동작하며, 닫은 뒤에도 control 메뉴에서 다시 열 수 있어야 한다.
+
 기본 텍스트 예:
 
 ```text
@@ -727,26 +736,33 @@ Upload         1.8 MB/s
 - 지표별 collector 상태를 사용자가 이해할 수 있는 수준으로 표시한다.
 - 각 detail popover는 icon, 현재값, status badge, live chart, min/max/avg 요약, 세부 정보 row를 포함한다.
 - manager window로 이동하는 버튼을 제공한다.
+- popover의 manager/settings 버튼은 window를 만들고 앞으로 가져오는 동작까지 보장해야 한다.
 
 ## 20. Manager Window
 
-`mystats`는 메뉴바 항목을 켜고 끄는 manager window를 제공한다. manager window는 `WindowGroup(id: "manager")`로 구성하고, 각 메뉴바 popover에서 열 수 있어야 한다.
+`mystats`는 메뉴바 항목을 켜고 끄는 manager window를 제공한다. 메뉴바 popover 내부에서 window open이 무반응처럼 보이지 않도록, manager window는 AppKit window controller가 하나의 `NSWindow`를 소유하고 SwiftUI 설정 화면을 호스팅한다.
 
 manager window 기능:
 
 - CPU, GPU, Temperature, Network, Disk 메뉴바 항목 on/off
-- 각 항목의 현재 상태와 최신값 표시
-- 각 항목의 고정폭 메뉴바 preview 표시
+- 각 항목의 고정폭 메뉴바 폭 표시
 - 샘플링 모드 설정
 - unknown sensor, VPN interface, external disk, temperature unit 설정
 - 시작 시 자동 실행 설정
+- 앱 종료 버튼
 
 manager window UI 정책:
 
 - macOS 표준 utility/settings window처럼 동작한다.
 - 항목별 toggle은 즉시 저장한다.
-- 지표 상태는 icon, title, latest value, status, mini chart로 표시한다.
+- 지표 항목은 icon, title, 고정폭, on/off 상태로 표시한다.
+- live chart와 지표 상세 정보는 각 metric popover가 담당한다. manager window는 설정 변경 중 응답성을 우선한다.
 - 메뉴바에서 모든 지표를 끄는 것은 허용하되, 항상 표시되는 control 메뉴바 항목으로 manager window를 다시 열 수 있어야 한다.
+- manager/settings window는 같은 창을 재사용하며 window title은 `mystats Settings`로 둔다.
+- 창이 이미 열려 있으면 새 창을 중복 생성하지 않고 기존 창을 앞으로 가져온다.
+- 초기 개발 단계에서는 앱 실행 시 설정 창을 함께 열어 QA와 설정 접근성을 보장한다.
+- 완전한 menu-bar-only `LSUIElement` 배포 전환은 설정 창/종료/재열기 동작이 안정화된 뒤 별도 작업으로 진행한다.
+- `MenuBarExtra(isInserted:)` 바인딩은 같은 값이 반복 전달될 수 있으므로, 설정 저장은 실제 on/off 값이 바뀐 경우에만 수행한다.
 
 ## 21. 설정
 
@@ -1014,7 +1030,9 @@ UI:
 - 각 지표가 독립 메뉴바 항목으로 표시되는지 확인
 - manager window에서 항목 on/off가 즉시 반영되는지 확인
 - 메뉴바 값 변화 중 항목 폭이 변하지 않는지 확인
-- popover와 manager window의 mini chart가 ring buffer와 함께 갱신되는지 확인
+- popover의 chart가 ring buffer와 함께 갱신되는지 확인
+- manager/settings window를 열었을 때 앱 CPU가 idle에 가깝게 안정되는지 확인
+- manager/settings window의 종료 버튼이 앱 프로세스를 종료하는지 확인
 
 배포:
 

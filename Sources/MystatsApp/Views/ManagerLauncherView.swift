@@ -2,7 +2,6 @@ import SwiftUI
 import MystatsCore
 
 struct ManagerLauncherView: View {
-    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var metricStore: MetricStore
     @EnvironmentObject private var settingsStore: SettingsStore
 
@@ -22,12 +21,34 @@ struct ManagerLauncherView: View {
             }
 
             Button {
-                openWindow(id: "manager")
+                AppWindowController.showSettings(
+                    metricStore: metricStore,
+                    settingsStore: settingsStore
+                )
             } label: {
-                Label("Open Manager", systemImage: "slider.horizontal.3")
+                Label("Open Settings", systemImage: "slider.horizontal.3")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+
+            Button {
+                AppWindowController.showManager(
+                    metricStore: metricStore,
+                    settingsStore: settingsStore
+                )
+            } label: {
+                Label("Metric Manager", systemImage: "switch.2")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+
+            Button(role: .destructive) {
+                AppWindowController.quit()
+            } label: {
+                Label("Quit mystats", systemImage: "power")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
 
             Divider()
 

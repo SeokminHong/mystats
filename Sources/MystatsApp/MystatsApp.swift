@@ -3,8 +3,22 @@ import MystatsCore
 
 @main
 struct MystatsApp: App {
-    @StateObject private var metricStore = MetricStore()
-    @StateObject private var settingsStore = SettingsStore()
+    @StateObject private var metricStore = AppRuntime.shared.metricStore
+    @StateObject private var settingsStore = AppRuntime.shared.settingsStore
+
+    init() {
+        guard CommandLine.arguments.contains("--open-settings") else {
+            return
+        }
+
+        Task { @MainActor in
+            AppRuntime.shared.metricStore.startPreviewUpdates()
+            AppWindowController.showSettings(
+                metricStore: AppRuntime.shared.metricStore,
+                settingsStore: AppRuntime.shared.settingsStore
+            )
+        }
+    }
 
     var body: some Scene {
         MenuBarExtra {
@@ -30,17 +44,6 @@ struct MystatsApp: App {
         metricExtra(.temperature)
         metricExtra(.network)
         metricExtra(.disk)
-
-        WindowGroup("mystats Manager", id: "manager") {
-            ManagerWindowView()
-                .environmentObject(metricStore)
-                .environmentObject(settingsStore)
-                .frame(minWidth: 720, minHeight: 520)
-                .onAppear {
-                    metricStore.startPreviewUpdates()
-                }
-        }
-        .defaultSize(width: 760, height: 560)
 
         Settings {
             ManagerWindowView()

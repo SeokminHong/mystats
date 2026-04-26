@@ -6,42 +6,53 @@ struct ManagerWindowView: View {
     @EnvironmentObject private var settingsStore: SettingsStore
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                Section("Menu Bar Metrics") {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("mystats")
+                    .font(.title2.bold())
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Menu Bar Metrics")
+                        .font(.headline)
+
                     ForEach(MenuBarItem.allCases) { item in
                         Toggle(isOn: menuBarItemBinding(item)) {
                             Label(item.presentation.title, systemImage: item.presentation.symbolName)
                         }
                     }
                 }
+                Spacer()
             }
-            .listStyle(.sidebar)
-            .navigationTitle("mystats")
-        } detail: {
+            .padding(18)
+            .frame(width: 230)
+            .frame(maxHeight: .infinity, alignment: .topLeading)
+            .background(.quaternary.opacity(0.35))
+
+            Divider()
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 14)], spacing: 14) {
+                    VStack(alignment: .leading, spacing: 10) {
                         ForEach(MenuBarItem.allCases) { item in
-                            ManagerMetricCard(
+                            ManagerMetricRow(
                                 item: item,
-                                enabled: menuBarItemBinding(item),
-                                snapshot: metricStore.snapshot,
-                                history: metricStore.history.elements,
-                                settings: settingsStore.settings
+                                enabled: menuBarItemBinding(item)
                             )
+                            Divider()
                         }
                     }
+                    .padding(14)
+                    .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
 
                     ManagerSettingsPanel()
                         .environmentObject(settingsStore)
                 }
                 .padding(20)
             }
-            .navigationTitle("Manager")
         }
+        .frame(minWidth: 720, minHeight: 520)
     }
 
     private var header: some View {
@@ -55,7 +66,7 @@ struct ManagerWindowView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text("mystats")
                     .font(.title2.bold())
-                Text("Choose fixed-width menu bar metrics and review live previews.")
+                Text("Choose fixed-width menu bar metrics and lightweight app controls.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -73,84 +84,39 @@ struct ManagerWindowView: View {
     }
 }
 
-private struct ManagerMetricCard: View {
+private struct ManagerMetricRow: View {
     let item: MenuBarItem
     @Binding var enabled: Bool
-    let snapshot: MetricSnapshot
-    let history: [MetricSnapshot]
-    let settings: AppSettings
 
     var body: some View {
         let presentation = item.presentation
-        let display = MetricDisplayResolver.resolve(
-            item: item,
-            snapshot: snapshot,
-            history: history,
-            settings: settings
-        )
 
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                Image(systemName: presentation.symbolName)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(presentation.tint)
-                    .frame(width: 24)
+        HStack(spacing: 12) {
+            Image(systemName: presentation.symbolName)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(presentation.tint)
+                .frame(width: 26, height: 26)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(presentation.title)
-                        .font(.headline)
-                    Text(statusLabel(display.status))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Toggle("", isOn: $enabled)
-                    .toggleStyle(.switch)
-                    .labelsHidden()
+            VStack(alignment: .leading, spacing: 3) {
+                Text(presentation.title)
+                    .font(.headline)
+                Text("Fixed menu width: \(Int(presentation.menuWidth)) pt")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            HStack(alignment: .center, spacing: 10) {
-                MenuBarMetricLabelView(
-                    item: item,
-                    snapshot: snapshot,
-                    history: history,
-                    settings: settings
-                )
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 7))
+            Spacer()
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Fixed width")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("\(Int(presentation.menuWidth)) pt")
-                        .font(.caption.monospacedDigit())
-                }
-            }
+            Toggle("", isOn: $enabled)
+                .toggleStyle(.switch)
+                .labelsHidden()
 
-            SparklineChartView(values: display.chartValues, tint: presentation.tint)
-                .frame(height: 42)
-                .padding(8)
-                .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 7))
+            Text(enabled ? "On" : "Off")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 28, alignment: .trailing)
         }
-        .padding(14)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func statusLabel(_ status: MetricStatus) -> String {
-        switch status {
-        case .available:
-            return "Available"
-        case .experimental:
-            return "Experimental"
-        case .unsupported:
-            return "Unsupported"
-        case .unavailable:
-            return "Unavailable"
-        }
+        .frame(minHeight: 44)
     }
 }
 
@@ -186,9 +152,19 @@ private struct ManagerSettingsPanel: View {
                 }
             }
             .frame(maxWidth: 260)
+
+            Divider()
+
+            HStack {
+                Spacer()
+                Button(role: .destructive) {
+                    AppWindowController.quit()
+                } label: {
+                    Label("Quit mystats", systemImage: "power")
+                }
+            }
         }
         .padding(14)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 }
-

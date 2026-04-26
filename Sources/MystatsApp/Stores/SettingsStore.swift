@@ -19,10 +19,11 @@ final class SettingsStore: ObservableObject {
     }
 
     func setMenuBarItem(_ item: MenuBarItem, enabled: Bool) {
+        guard settings.menuBarItems.contains(item) != enabled else {
+            return
+        }
+
         if enabled {
-            guard !settings.menuBarItems.contains(item) else {
-                return
-            }
             settings.menuBarItems.append(item)
         } else {
             settings.menuBarItems.removeAll { $0 == item }

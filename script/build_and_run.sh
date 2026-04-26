@@ -45,8 +45,6 @@ cat >"$INFO_PLIST" <<PLIST
   <string>1</string>
   <key>LSMinimumSystemVersion</key>
   <string>$MIN_SYSTEM_VERSION</string>
-  <key>LSUIElement</key>
-  <true/>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
 </dict>
@@ -55,6 +53,10 @@ PLIST
 
 open_app() {
   /usr/bin/open -n "$APP_BUNDLE"
+}
+
+open_settings() {
+  /usr/bin/open -n "$APP_BUNDLE" --args --open-settings
 }
 
 case "$MODE" in
@@ -77,9 +79,11 @@ case "$MODE" in
     sleep 1
     pgrep -x "$APP_NAME" >/dev/null
     ;;
+  --settings|settings)
+    open_settings
+    ;;
   *)
-    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify]" >&2
+    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify|--settings]" >&2
     exit 2
     ;;
 esac
-
