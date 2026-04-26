@@ -23,28 +23,11 @@ struct MenuBarMetricLabelView: View {
                 .foregroundStyle(presentation.tint)
                 .frame(width: 12)
 
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 3) {
-                    Text(presentation.title)
-                        .foregroundStyle(.secondary)
-                    Text(display.primaryValue)
-                        .foregroundStyle(.primary)
-                }
-                .font(.system(size: 9, weight: .semibold))
-
-                if itemSettings.showsSecondaryValue, let secondary = display.secondaryValue {
-                    Text(secondary)
-                        .font(.system(size: 7.5, weight: .regular))
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(statusLabel(display.status))
-                        .font(.system(size: 7.5, weight: .regular))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
+            menuText(
+                presentation: presentation,
+                display: display,
+                itemSettings: itemSettings
+            )
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if itemSettings.showsMenuBarSparkline {
@@ -54,6 +37,56 @@ struct MenuBarMetricLabelView: View {
         }
         .frame(width: presentation.menuWidth, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private func menuText(
+        presentation: MetricPresentation,
+        display: MetricDisplaySnapshot,
+        itemSettings: MetricItemSettings
+    ) -> some View {
+        switch display.menuLayout {
+        case .single(let primary, let secondary, let secondaryConfigurable):
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 3) {
+                    Text(presentation.title)
+                        .foregroundStyle(.secondary)
+                    Text(primary)
+                        .foregroundStyle(.primary)
+                }
+                .font(.system(size: 9, weight: .semibold))
+
+                let secondaryLine = secondaryConfigurable && itemSettings.showsSecondaryValue
+                    ? secondary
+                    : statusLabel(display.status)
+                Text(secondaryLine ?? statusLabel(display.status))
+                    .font(.system(size: 7.5, weight: .regular))
+                    .foregroundStyle(.secondary)
+            }
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+
+        case .paired(let first, let second):
+            VStack(alignment: .leading, spacing: 1) {
+                peerRow(first)
+                peerRow(second)
+            }
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.86)
+        }
+    }
+
+    private func peerRow(_ value: MetricMenuPeerValue) -> some View {
+        HStack(spacing: 3) {
+            Text(value.label)
+                .foregroundStyle(.secondary)
+                .frame(width: 9, alignment: .center)
+            Text(value.value)
+                .foregroundStyle(.primary)
+        }
+        .font(.system(size: 8.4, weight: .semibold))
     }
 
     private func statusLabel(_ status: MetricStatus) -> String {

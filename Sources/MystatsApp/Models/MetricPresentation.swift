@@ -18,9 +18,9 @@ extension MenuBarItem {
         case .temperature:
             return MetricPresentation(title: "Temp", symbolName: "thermometer.medium", menuWidth: 96, tint: .orange)
         case .network:
-            return MetricPresentation(title: "Net", symbolName: "arrow.up.arrow.down", menuWidth: 138, tint: .green)
+            return MetricPresentation(title: "Net", symbolName: "arrow.up.arrow.down", menuWidth: 124, tint: .green)
         case .disk:
-            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 138, tint: .teal)
+            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 124, tint: .teal)
         }
     }
 }

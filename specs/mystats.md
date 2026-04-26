@@ -645,6 +645,14 @@ chart scale:
 - 자동 축 지표는 값이 모두 같을 때도 기준선이 중앙에서 사인파처럼 보이지 않도록 0을 하한으로 둔다.
 - preview/sample 데이터는 사인파 같은 주기 함수를 쓰지 않는다. 실제 collector가 들어오기 전에는 random walk와 occasional spike 형태의 deterministic preview를 사용한다.
 
+chart gap policy:
+
+- chart series는 값 배열만이 아니라 timestamp와 optional value를 함께 가진 point 목록으로 표현한다.
+- 특정 timestamp에 값이 없으면 `0`으로 대체하지 않는다. 통계, 현재값, 축 계산에서도 missing value는 제외한다.
+- sleep/wake, collector pause, 장기 window rollup 누락 등으로 정상 샘플 간격보다 큰 시간 간격이 생기면 그 구간을 연속 실선으로 연결하지 않는다.
+- 끊긴 구간은 gap으로 표현하며, 앞뒤 값이 모두 있는 경우에는 낮은 대비의 점선 connector로 표시할 수 있다.
+- chart의 x 위치는 배열 index가 아니라 timestamp range 기준으로 계산한다.
+
 ## 18. 메뉴바 UI
 
 기본 메뉴바 표시 항목:
@@ -692,6 +700,10 @@ C32 G18 61°
 - status item 내부 렌더링은 불필요한 좌우 padding을 두지 않고, icon/text/sparkline을 1-2px 단위 여백으로 조밀하게 배치한다.
 - 숫자는 monospaced digit을 사용한다.
 - 메뉴바 텍스트는 현재 상태 요약을 담되 1-2줄 안에 들어오게 압축한다.
+- 메뉴바 표시 모델은 모든 지표에 `primary/secondary`를 강제하지 않는다.
+- CPU처럼 주값과 하위 요약값이 있는 지표는 `primary + optional secondary` 레이아웃을 사용한다.
+- Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
+- 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.
 - 값이 `unsupported` 또는 `unavailable`인 항목은 메뉴바에서 숨길 수 있다.
@@ -768,7 +780,7 @@ manager/settings window 기능:
 
 - CPU, GPU, Temperature, Network, Disk 메뉴바 항목 on/off
 - metric별 menu item detail 설정
-  - secondary value 표시
+  - 계층형 secondary value가 있는 지표의 secondary 표시
   - menu sparkline 표시
   - popover detail section 표시
 - 각 항목의 고정폭 메뉴바 폭 표시

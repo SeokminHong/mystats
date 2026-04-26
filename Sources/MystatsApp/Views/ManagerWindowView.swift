@@ -141,9 +141,7 @@ private struct MetricSettingsTab: View {
 
                     Spacer()
 
-                    Text(display.primaryValue)
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
+                    headerValue(display)
                 }
             }
 
@@ -151,7 +149,9 @@ private struct MetricSettingsTab: View {
                 Toggle("Show in menu bar", isOn: menuBarItemBinding)
                     .disabled(!settingsStore.canDisableMenuBarItem(item) && settingsStore.isMenuBarItemEnabled(item))
 
-                Toggle("Show secondary value", isOn: metricSettingsBinding(\.showsSecondaryValue))
+                if display.hasConfigurableSecondaryValue {
+                    Toggle("Show secondary value", isOn: metricSettingsBinding(\.showsSecondaryValue))
+                }
                 Toggle("Show sparkline", isOn: metricSettingsBinding(\.showsMenuBarSparkline))
 
                 LabeledContent("Fixed width") {
@@ -180,6 +180,32 @@ private struct MetricSettingsTab: View {
         }
         .formStyle(.grouped)
         .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private func headerValue(_ display: MetricDisplaySnapshot) -> some View {
+        switch display.menuLayout {
+        case .single(let primary, _, _):
+            Text(primary)
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+        case .paired(let first, let second):
+            VStack(alignment: .trailing, spacing: 2) {
+                peerHeaderValue(first)
+                peerHeaderValue(second)
+            }
+        }
+    }
+
+    private func peerHeaderValue(_ value: MetricMenuPeerValue) -> some View {
+        HStack(spacing: 5) {
+            Text(value.label)
+                .foregroundStyle(.secondary)
+            Text(value.value)
+                .foregroundStyle(.primary)
+        }
+        .font(.system(size: 15, weight: .semibold, design: .rounded))
+        .monospacedDigit()
     }
 
     private var menuBarItemBinding: Binding<Bool> {

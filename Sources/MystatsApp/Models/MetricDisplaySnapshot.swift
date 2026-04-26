@@ -3,8 +3,32 @@ import MystatsCore
 struct MetricDisplaySnapshot {
     let primaryValue: String
     let secondaryValue: String?
+    let menuLayout: MetricMenuLayout
     let status: MetricStatus
     let chartValues: [Double]
+
+    var hasConfigurableSecondaryValue: Bool {
+        menuLayout.hasConfigurableSecondaryValue
+    }
+}
+
+enum MetricMenuLayout {
+    case single(primary: String, secondary: String?, secondaryConfigurable: Bool)
+    case paired(first: MetricMenuPeerValue, second: MetricMenuPeerValue)
+
+    var hasConfigurableSecondaryValue: Bool {
+        switch self {
+        case .single(_, let secondary, let secondaryConfigurable):
+            return secondaryConfigurable && secondary != nil
+        case .paired:
+            return false
+        }
+    }
+}
+
+struct MetricMenuPeerValue {
+    let label: String
+    let value: String
 }
 
 enum MetricDisplayResolver {
@@ -32,10 +56,13 @@ enum MetricDisplayResolver {
         guard let cpu = snapshot.cpu else {
             return unavailable()
         }
+        let primary = PercentFormatter.short(cpu.totalUsage)
+        let secondary = coreGroupSummary(cpu)
 
         return MetricDisplaySnapshot(
-            primaryValue: PercentFormatter.short(cpu.totalUsage),
-            secondaryValue: coreGroupSummary(cpu),
+            primaryValue: primary,
+            secondaryValue: secondary,
+            menuLayout: .single(primary: primary, secondary: secondary, secondaryConfigurable: true),
             status: cpu.status,
             chartValues: history.compactMap { $0.cpu?.totalUsage }
         )
@@ -45,10 +72,12 @@ enum MetricDisplayResolver {
         guard let gpu = snapshot.gpu else {
             return unavailable()
         }
+        let primary = gpu.totalUsage.map(PercentFormatter.short) ?? "N/A"
 
         return MetricDisplaySnapshot(
-            primaryValue: gpu.totalUsage.map(PercentFormatter.short) ?? "N/A",
+            primaryValue: primary,
             secondaryValue: nil,
+            menuLayout: .single(primary: primary, secondary: nil, secondaryConfigurable: false),
             status: gpu.status,
             chartValues: history.compactMap { $0.gpu?.totalUsage }
         )
@@ -62,10 +91,14 @@ enum MetricDisplayResolver {
         guard let thermal = snapshot.thermal else {
             return unavailable()
         }
+        let primary = thermal.cpuCelsius.map {
+            TemperatureFormatter.short($0, unit: settings.temperatureUnit)
+        } ?? thermal.thermalState.rawValue.capitalized
 
         return MetricDisplaySnapshot(
-            primaryValue: thermal.cpuCelsius.map { TemperatureFormatter.short($0, unit: settings.temperatureUnit) } ?? thermal.thermalState.rawValue.capitalized,
+            primaryValue: primary,
             secondaryValue: nil,
+            menuLayout: .single(primary: primary, secondary: nil, secondaryConfigurable: false),
             status: thermal.status,
             chartValues: history.compactMap { $0.thermal?.cpuCelsius }
         )
@@ -75,10 +108,16 @@ enum MetricDisplayResolver {
         guard let network = snapshot.network else {
             return unavailable()
         }
+        let download = ByteRateFormatter.short(network.downloadBytesPerSecond)
+        let upload = ByteRateFormatter.short(network.uploadBytesPerSecond)
 
         return MetricDisplaySnapshot(
-            primaryValue: "↓\(ByteRateFormatter.short(network.downloadBytesPerSecond))",
-            secondaryValue: "↑\(ByteRateFormatter.short(network.uploadBytesPerSecond))",
+            primaryValue: "↓\(download)",
+            secondaryValue: "↑\(upload)",
+            menuLayout: .paired(
+                first: MetricMenuPeerValue(label: "↓", value: download),
+                second: MetricMenuPeerValue(label: "↑", value: upload)
+            ),
             status: network.status,
             chartValues: history.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
         )
@@ -88,10 +127,16 @@ enum MetricDisplayResolver {
         guard let disk = snapshot.disk else {
             return unavailable()
         }
+        let read = ByteRateFormatter.short(disk.readBytesPerSecond)
+        let write = ByteRateFormatter.short(disk.writeBytesPerSecond)
 
         return MetricDisplaySnapshot(
-            primaryValue: "R \(ByteRateFormatter.short(disk.readBytesPerSecond))",
-            secondaryValue: "W \(ByteRateFormatter.short(disk.writeBytesPerSecond))",
+            primaryValue: "R \(read)",
+            secondaryValue: "W \(write)",
+            menuLayout: .paired(
+                first: MetricMenuPeerValue(label: "R", value: read),
+                second: MetricMenuPeerValue(label: "W", value: write)
+            ),
             status: disk.status,
             chartValues: history.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
         )
@@ -101,6 +146,7 @@ enum MetricDisplayResolver {
         MetricDisplaySnapshot(
             primaryValue: "N/A",
             secondaryValue: nil,
+            menuLayout: .single(primary: "N/A", secondary: nil, secondaryConfigurable: false),
             status: .unavailable(reason: "No sample"),
             chartValues: []
         )

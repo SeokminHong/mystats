@@ -22,7 +22,12 @@ struct HistoryChartView: View {
             let plotWidth = max(size.width - axisWidth, 1)
             let plotSize = CGSize(width: plotWidth, height: size.height)
             let allValues = series.flatMap(\.values).filter { $0.isFinite }
-            guard !allValues.isEmpty, allValues.count > 1 else {
+            let allPoints = series.flatMap(\.points)
+            guard
+                !allValues.isEmpty,
+                allValues.count > 1,
+                let timeRange = timeRange(for: allPoints)
+            else {
                 drawEmptyState(context: context, size: size)
                 return
             }
@@ -34,25 +39,14 @@ struct HistoryChartView: View {
 
             let range = max(axis.max - axis.min, 0.0001)
             for line in series where line.values.count > 1 {
-                let xStep = plotSize.width / CGFloat(line.values.count - 1)
-                var path = Path()
-
-                for (index, value) in line.values.enumerated() {
-                    let clamped = min(max(value, axis.min), axis.max)
-                    let normalized = (clamped - axis.min) / range
-                    let point = CGPoint(
-                        x: CGFloat(index) * xStep,
-                        y: plotSize.height - CGFloat(normalized) * plotSize.height
-                    )
-
-                    if index == 0 {
-                        path.move(to: point)
-                    } else {
-                        path.addLine(to: point)
-                    }
-                }
-
-                context.stroke(path, with: .color(line.tint), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+                drawSeries(
+                    line,
+                    context: context,
+                    plotSize: plotSize,
+                    timeRange: timeRange,
+                    axis: axis,
+                    valueRange: range
+                )
             }
         }
     }
@@ -97,6 +91,127 @@ struct HistoryChartView: View {
         path.move(to: CGPoint(x: 0, y: size.height / 2))
         path.addLine(to: CGPoint(x: size.width, y: size.height / 2))
         context.stroke(path, with: .color(.secondary.opacity(0.3)), lineWidth: 1)
+    }
+
+    private func drawSeries(
+        _ line: MetricChartSeries,
+        context: GraphicsContext,
+        plotSize: CGSize,
+        timeRange: ClosedRange<Date>,
+        axis: ChartAxis,
+        valueRange: Double
+    ) {
+        let gapThreshold = gapThreshold(for: line.points)
+        var solidPath = Path()
+        var hasSolidSegment = false
+        var previous: RenderedChartPoint?
+
+        for point in line.points.sorted(by: { $0.timestamp < $1.timestamp }) {
+            guard let value = point.value, value.isFinite else {
+                previous = nil
+                continue
+            }
+
+            let current = renderedPoint(
+                timestamp: point.timestamp,
+                value: value,
+                plotSize: plotSize,
+                timeRange: timeRange,
+                axis: axis,
+                valueRange: valueRange
+            )
+
+            guard let previousPoint = previous else {
+                solidPath.move(to: current.point)
+                previous = current
+                continue
+            }
+
+            if current.timestamp.timeIntervalSince(previousPoint.timestamp) > gapThreshold {
+                strokeSolidPath(solidPath, context: context, tint: line.tint, hasSegment: hasSolidSegment)
+                drawGap(from: previousPoint.point, to: current.point, context: context, tint: line.tint)
+                solidPath = Path()
+                solidPath.move(to: current.point)
+                hasSolidSegment = false
+            } else {
+                solidPath.addLine(to: current.point)
+                hasSolidSegment = true
+            }
+
+            previous = current
+        }
+
+        strokeSolidPath(solidPath, context: context, tint: line.tint, hasSegment: hasSolidSegment)
+    }
+
+    private func renderedPoint(
+        timestamp: Date,
+        value: Double,
+        plotSize: CGSize,
+        timeRange: ClosedRange<Date>,
+        axis: ChartAxis,
+        valueRange: Double
+    ) -> RenderedChartPoint {
+        let duration = max(timeRange.upperBound.timeIntervalSince(timeRange.lowerBound), 0.0001)
+        let timeOffset = timestamp.timeIntervalSince(timeRange.lowerBound)
+        let x = CGFloat(timeOffset / duration) * plotSize.width
+        let clamped = min(max(value, axis.min), axis.max)
+        let normalized = (clamped - axis.min) / valueRange
+        let y = plotSize.height - CGFloat(normalized) * plotSize.height
+
+        return RenderedChartPoint(timestamp: timestamp, point: CGPoint(x: x, y: y))
+    }
+
+    private func strokeSolidPath(
+        _ path: Path,
+        context: GraphicsContext,
+        tint: Color,
+        hasSegment: Bool
+    ) {
+        guard hasSegment else {
+            return
+        }
+
+        context.stroke(path, with: .color(tint), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+    }
+
+    private func drawGap(from start: CGPoint, to end: CGPoint, context: GraphicsContext, tint: Color) {
+        var path = Path()
+        path.move(to: start)
+        path.addLine(to: end)
+        context.stroke(
+            path,
+            with: .color(tint.opacity(0.45)),
+            style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round, dash: [3, 3])
+        )
+    }
+
+    private func timeRange(for points: [MetricChartPoint]) -> ClosedRange<Date>? {
+        let timestamps = points
+            .filter { $0.value?.isFinite == true }
+            .map(\.timestamp)
+            .sorted()
+        guard let first = timestamps.first, let last = timestamps.last, first < last else {
+            return nil
+        }
+        return first...last
+    }
+
+    private func gapThreshold(for points: [MetricChartPoint]) -> TimeInterval {
+        let timestamps = points
+            .filter { $0.value?.isFinite == true }
+            .map(\.timestamp)
+            .sorted()
+        let deltas = zip(timestamps.dropFirst(), timestamps)
+            .map { next, current in next.timeIntervalSince(current) }
+            .filter { $0 > 0 }
+            .sorted()
+        guard !deltas.isEmpty else {
+            return 5
+        }
+
+        let medianDelta = deltas[deltas.count / 2]
+        return max(medianDelta * 2.5, 5)
     }
 
     private func drawAxisLabels(context: GraphicsContext, size: CGSize, axis: ChartAxis) {
@@ -168,4 +283,9 @@ private struct ChartAxis {
     let max: Double
     let lowerLabel: String
     let upperLabel: String
+}
+
+private struct RenderedChartPoint {
+    let timestamp: Date
+    let point: CGPoint
 }
