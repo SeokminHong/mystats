@@ -33,19 +33,27 @@ struct HistoryChartView: View {
                 return
             }
 
-            let axis = axisDomain(for: allValues)
+            let independentTrendScale = usesIndependentTrendScale
+            let axis = independentTrendScale ? trendAxisLabelDomain : axisDomain(for: allValues)
             drawChartBackground(context: context, size: plotSize)
             drawGrid(context: context, size: plotSize)
             drawAxisLabels(context: context, size: size, axis: axis)
+            let plotRects = seriesPlotRects(
+                count: independentTrendScale ? series.count : 1,
+                in: CGRect(origin: .zero, size: plotSize)
+            )
 
-            let range = max(axis.max - axis.min, 0.0001)
-            for line in series where line.values.count > 1 {
+            for (seriesIndex, line) in series.enumerated() where line.values.count > 1 {
+                let lineAxis = independentTrendScale ? trendAxisDomain(for: line.values) : axis
+                let range = max(lineAxis.max - lineAxis.min, 0.0001)
+                let plotRect = independentTrendScale ? plotRects[seriesIndex] : plotRects[0]
                 drawSeries(
                     line,
+                    seriesIndex: seriesIndex,
                     context: context,
-                    plotSize: plotSize,
+                    plotRect: plotRect,
                     timeRange: timeDomain,
-                    axis: axis,
+                    axis: lineAxis,
                     valueRange: range
                 )
             }
@@ -96,8 +104,9 @@ struct HistoryChartView: View {
 
     private func drawSeries(
         _ line: MetricChartSeries,
+        seriesIndex: Int,
         context: GraphicsContext,
-        plotSize: CGSize,
+        plotRect: CGRect,
         timeRange: ClosedRange<Date>,
         axis: ChartAxis,
         valueRange: Double
@@ -116,7 +125,7 @@ struct HistoryChartView: View {
             let current = renderedPoint(
                 timestamp: point.timestamp,
                 value: value,
-                plotSize: plotSize,
+                plotRect: plotRect,
                 timeRange: timeRange,
                 axis: axis,
                 valueRange: valueRange
@@ -129,7 +138,7 @@ struct HistoryChartView: View {
             }
 
             if current.timestamp.timeIntervalSince(previousPoint.timestamp) > gapThreshold {
-                strokeSolidPath(solidPath, context: context, tint: line.tint, hasSegment: hasSolidSegment)
+                strokeSolidPath(solidPath, context: context, tint: line.tint, seriesIndex: seriesIndex, hasSegment: hasSolidSegment)
                 drawGap(from: previousPoint.point, to: current.point, context: context, tint: line.tint)
                 solidPath = Path()
                 solidPath.move(to: current.point)
@@ -142,23 +151,23 @@ struct HistoryChartView: View {
             previous = current
         }
 
-        strokeSolidPath(solidPath, context: context, tint: line.tint, hasSegment: hasSolidSegment)
+        strokeSolidPath(solidPath, context: context, tint: line.tint, seriesIndex: seriesIndex, hasSegment: hasSolidSegment)
     }
 
     private func renderedPoint(
         timestamp: Date,
         value: Double,
-        plotSize: CGSize,
+        plotRect: CGRect,
         timeRange: ClosedRange<Date>,
         axis: ChartAxis,
         valueRange: Double
     ) -> RenderedChartPoint {
         let duration = max(timeRange.upperBound.timeIntervalSince(timeRange.lowerBound), 0.0001)
         let timeOffset = timestamp.timeIntervalSince(timeRange.lowerBound)
-        let x = CGFloat(timeOffset / duration) * plotSize.width
+        let x = plotRect.minX + CGFloat(timeOffset / duration) * plotRect.width
         let clamped = min(max(value, axis.min), axis.max)
         let normalized = (clamped - axis.min) / valueRange
-        let y = plotSize.height - CGFloat(normalized) * plotSize.height
+        let y = plotRect.maxY - CGFloat(normalized) * plotRect.height
 
         return RenderedChartPoint(timestamp: timestamp, point: CGPoint(x: x, y: y))
     }
@@ -167,13 +176,23 @@ struct HistoryChartView: View {
         _ path: Path,
         context: GraphicsContext,
         tint: Color,
+        seriesIndex: Int,
         hasSegment: Bool
     ) {
         guard hasSegment else {
             return
         }
 
-        context.stroke(path, with: .color(tint), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+        context.stroke(
+            path,
+            with: .color(tint),
+            style: StrokeStyle(
+                lineWidth: seriesIndex == 0 ? 1.7 : 1.45,
+                lineCap: .round,
+                lineJoin: .round,
+                dash: seriesIndex == 0 ? [] : [4, 3]
+            )
+        )
     }
 
     private func drawGap(from start: CGPoint, to end: CGPoint, context: GraphicsContext, tint: Color) {
@@ -222,14 +241,40 @@ struct HistoryChartView: View {
         )
     }
 
+    private func seriesPlotRects(count: Int, in rect: CGRect) -> [CGRect] {
+        guard count > 1 else {
+            return [rect]
+        }
+
+        let gap: CGFloat = 6
+        let laneHeight = max((rect.height - gap * CGFloat(count - 1)) / CGFloat(count), 1)
+        return (0..<count).map { index in
+            CGRect(
+                x: rect.minX,
+                y: rect.minY + CGFloat(index) * (laneHeight + gap),
+                width: rect.width,
+                height: laneHeight
+            )
+        }
+    }
+
     private func axisDomain(for values: [Double]) -> ChartAxis {
         switch commonScale {
         case .some(.fixed(let domain, let lowerLabel, let upperLabel)):
             return ChartAxis(min: domain.lowerBound, max: domain.upperBound, lowerLabel: lowerLabel, upperLabel: upperLabel)
         case .some(.automaticAdaptive):
             return adaptiveAxisDomain(for: values)
-        case .some(.automaticFloorZero), nil:
+        case .some(.automaticFloorZero), .some(.independentTrend), nil:
             return floorZeroAxisDomain(for: values)
+        }
+    }
+
+    private var usesIndependentTrendScale: Bool {
+        !series.isEmpty && series.allSatisfy {
+            if case .independentTrend = $0.scale {
+                return true
+            }
+            return false
         }
     }
 
@@ -260,7 +305,23 @@ struct HistoryChartView: View {
                 }
                 return false
             } ? first : nil
+        case .independentTrend:
+            return series.allSatisfy {
+                if case .independentTrend = $0.scale {
+                    return true
+                }
+                return false
+            } ? first : nil
         }
+    }
+
+    private var trendAxisLabelDomain: ChartAxis {
+        ChartAxis(min: 0, max: 1, lowerLabel: "Low", upperLabel: "High")
+    }
+
+    private func trendAxisDomain(for values: [Double]) -> ChartAxis {
+        let domain = ChartDomainResolver.trendDomain(for: values)
+        return ChartAxis(min: domain.lower, max: domain.upper, lowerLabel: "Low", upperLabel: "High")
     }
 
     private func adaptiveAxisDomain(for values: [Double]) -> ChartAxis {

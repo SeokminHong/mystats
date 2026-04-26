@@ -8,6 +8,18 @@ struct MystatsApp: App {
     @StateObject private var settingsStore = AppRuntime.shared.settingsStore
 
     init() {
+        #if DEBUG
+        if let outputPath = Self.qaRenderOutputPath() {
+            do {
+                try StatusItemVisualQARenderer.render(to: URL(fileURLWithPath: outputPath))
+                Foundation.exit(0)
+            } catch {
+                fputs("visual QA render failed: \(error)\n", stderr)
+                Foundation.exit(1)
+            }
+        }
+        #endif
+
         NSApplication.shared.setActivationPolicy(.accessory)
 
         let runtime = AppRuntime.shared
@@ -54,6 +66,17 @@ struct MystatsApp: App {
             return MenuBarItem(rawValue: value)
         }.first
     }
+
+    #if DEBUG
+    private static func qaRenderOutputPath() -> String? {
+        CommandLine.arguments.compactMap { argument in
+            guard argument.hasPrefix("--render-qa=") else {
+                return nil
+            }
+            return String(argument.dropFirst("--render-qa=".count))
+        }.first
+    }
+    #endif
 
     private static func afterLaunch(_ action: @escaping @MainActor () -> Void) {
         DispatchQueue.main.async {

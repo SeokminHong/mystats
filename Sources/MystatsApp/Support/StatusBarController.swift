@@ -312,7 +312,7 @@ private final class StatusItemHost {
     }
 }
 
-private enum StatusItemImageRenderer {
+enum StatusItemImageRenderer {
     static func image(
         item: MenuBarItem,
         display: MetricDisplaySnapshot,
@@ -404,18 +404,20 @@ private enum StatusItemImageRenderer {
             width: max(rect.width - 1, 1),
             height: max(rect.height - 2, 1)
         )
+        let plotRects = sparklinePlotRects(count: sanitizedSeries.count, in: plotRect)
 
         for (seriesIndex, values) in sanitizedSeries.enumerated() {
+            let seriesRect = plotRects[seriesIndex]
             let axis = ChartDomainResolver.trendDomain(for: values)
             let range = max(axis.upper - axis.lower, 0.0001)
             let path = NSBezierPath()
-            let xStep = plotRect.width / CGFloat(values.count - 1)
+            let xStep = seriesRect.width / CGFloat(values.count - 1)
 
             for (index, value) in values.enumerated() {
                 let normalized = min(max((value - axis.lower) / range, 0), 1)
                 let point = NSPoint(
-                    x: plotRect.minX + CGFloat(index) * xStep,
-                    y: plotRect.minY + CGFloat(normalized) * plotRect.height
+                    x: seriesRect.minX + CGFloat(index) * xStep,
+                    y: seriesRect.minY + CGFloat(normalized) * seriesRect.height
                 )
 
                 if index == 0 {
@@ -435,6 +437,23 @@ private enum StatusItemImageRenderer {
             path.lineCapStyle = .round
             path.lineJoinStyle = .round
             path.stroke()
+        }
+    }
+
+    private static func sparklinePlotRects(count: Int, in rect: NSRect) -> [NSRect] {
+        guard count > 1 else {
+            return [rect]
+        }
+
+        let gap: CGFloat = 1
+        let laneHeight = max((rect.height - gap * CGFloat(count - 1)) / CGFloat(count), 1)
+        return (0..<count).map { index in
+            NSRect(
+                x: rect.minX,
+                y: rect.maxY - CGFloat(index + 1) * laneHeight - CGFloat(index) * gap,
+                width: rect.width,
+                height: laneHeight
+            )
         }
     }
 

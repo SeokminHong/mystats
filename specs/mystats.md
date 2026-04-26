@@ -656,10 +656,14 @@ chart scale:
 - CPU/GPU 사용률은 항상 0-100% 고정 축으로 표시한다.
 - 온도는 기본 0-110°C 고정 축으로 표시하되, Fahrenheit 표시 시 같은 물리 범위를 변환해서 표시한다.
 - network/disk byte rate는 현재 window의 min/max에 padding을 둔 adaptive 축을 사용한다.
+- network/disk처럼 방향이 둘인 byte-rate chart는 download/upload 또는 read/write의 magnitude 차이가 커도 두 선이 모두 보여야 한다. summary와 detail 값은 실제 단위를 유지하되, chart 선은 각 방향의 trend를 독립 축으로 정규화할 수 있다.
+- 팝오버의 방향성 byte-rate chart도 두 선이 겹쳐 한 줄처럼 보이면 안 된다. Network/Disk는 같은 chart 영역 안에서 방향별 vertical lane을 나누어 두 trend를 모두 읽을 수 있게 한다.
+- 독립 trend 축을 쓰는 chart는 오른쪽 축 label을 정확한 byte-rate 숫자로 표시하지 않는다. 정확한 현재값, min/max/avg는 legend와 summary stat에서 제공한다.
 - adaptive 축은 값의 변화가 작아도 일직선처럼 눌리지 않도록 최소 표시 범위를 보장한다.
 - adaptive 축은 순간 spike 하나가 전체 그래프를 평평하게 만들지 않도록 outlier에 덜 민감한 robust domain을 사용한다. 실제 min/max는 summary stat에 표시한다.
 - 값이 실제로 0 근처에 걸쳐 있는 경우에는 0을 하한으로 포함하지만, 모든 값이 0에서 멀리 떨어져 있으면 무조건 0에 고정하지 않는다.
 - 메뉴바 sparkline은 숫자 축 label이 없는 trend preview이므로, 다중선 지표의 각 선을 독립적으로 정규화해 낮은 magnitude의 upload/write 선도 변화가 보이게 한다.
+- 메뉴바 다중선 sparkline은 동일한 작은 plot rect 안에서 선이 겹쳐 한 줄처럼 보이면 안 된다. Network/Disk는 각 방향을 분리된 vertical lane 또는 동등한 분리 표현으로 렌더링한다.
 - 메뉴바 sparkline은 5분 raw sample 전체를 그대로 1px 이하 간격에 밀어 넣지 않고, 작은 폭에서 선 모양이 뭉개지지 않도록 표시 가능한 point 수로 downsample한다.
 - preview/sample 데이터는 사인파 같은 주기 함수를 쓰지 않는다. 실제 collector가 들어오기 전에는 random walk와 occasional spike 형태의 deterministic preview를 사용한다.
 - preview mode는 앱 시작 직후 chart가 일직선처럼 보이지 않도록 최근 5분 raw sample을 deterministic preview data로 seed한다.
@@ -1117,9 +1121,12 @@ UI:
 - 각 지표가 독립 메뉴바 항목으로 표시되는지 확인
 - manager window에서 항목 on/off가 즉시 반영되는지 확인
 - 메뉴바 값 변화 중 항목 폭이 변하지 않는지 확인
+- chart 표시 옵션 on/off 상태를 모두 캡처해 chart off 상태에서 메뉴바 항목 폭이 줄고, chart on 상태에서 각 지표의 sparkline이 표시되는지 확인
+- Network/Disk는 메뉴바와 popover visual QA에서 두 방향 선이 모두 보이는지 확인
 - popover의 chart가 ring buffer와 함께 갱신되는지 확인
 - manager/settings window를 열었을 때 앱 CPU가 idle에 가깝게 안정되는지 확인
 - manager/settings window의 종료 버튼이 앱 프로세스를 종료하는지 확인
+- DEBUG 빌드는 `--render-qa=<path>`로 status item chart on/off와 metric popover chart PNG를 생성할 수 있다. 이 경로는 화면 캡처 권한 문제로 전체화면 screenshot이 불가능한 환경에서 visual regression 확인용으로만 사용한다.
 
 배포:
 
