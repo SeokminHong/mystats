@@ -372,7 +372,7 @@ enum StatusItemImageRenderer {
         if itemSettings.showsMenuBarSparkline {
             drawSparkline(
                 display.chartSeries,
-                in: NSRect(x: width - chartWidth, y: 3, width: chartWidth - 1, height: 14),
+                in: NSRect(x: width - chartWidth, y: 3, width: chartWidth, height: 14),
                 color: .labelColor
             )
         }

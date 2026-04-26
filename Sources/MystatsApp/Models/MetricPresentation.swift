@@ -37,22 +37,22 @@ extension MenuBarItem {
     var presentation: MetricPresentation {
         switch self {
         case .cpu:
-            return MetricPresentation(title: "CPU", symbolName: "cpu", menuWidth: 104, tint: .blue)
+            return MetricPresentation(title: "CPU", symbolName: "cpu", menuWidth: 92, tint: .blue)
         case .gpu:
-            return MetricPresentation(title: "GPU", symbolName: "display", menuWidth: 98, tint: .purple)
+            return MetricPresentation(title: "GPU", symbolName: "display", menuWidth: 86, tint: .purple)
         case .temperature:
-            return MetricPresentation(title: "Temp", symbolName: "thermometer.medium", menuWidth: 96, tint: .orange)
+            return MetricPresentation(title: "Temp", symbolName: "thermometer.medium", menuWidth: 86, tint: .orange)
         case .network:
             return MetricPresentation(
                 title: "Net",
                 symbolName: "arrow.up.arrow.down",
-                menuWidth: 116,
+                menuWidth: 108,
                 tint: .green,
                 showsMenuBarIcon: false,
-                menuSparklineWidth: 56
+                menuSparklineWidth: 48
             )
         case .disk:
-            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 138, tint: .teal, menuSparklineWidth: 52)
+            return MetricPresentation(title: "Disk", symbolName: "internaldrive", menuWidth: 128, tint: .teal, menuSparklineWidth: 42)
         }
     }
 }
