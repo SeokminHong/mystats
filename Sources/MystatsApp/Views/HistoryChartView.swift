@@ -116,12 +116,14 @@ struct HistoryChartView: View {
         valueRange: Double,
         compressesByteRates: Bool = false
     ) {
-        let gapThreshold = gapThreshold(for: line.points)
+        let sortedPoints = line.points.sorted(by: { $0.timestamp < $1.timestamp })
+        let renderedPoints = downsample(sortedPoints, maxCount: maxRenderedPointCount)
+        let gapThreshold = gapThreshold(for: sortedPoints)
         var solidPath = Path()
         var hasSolidSegment = false
         var previous: RenderedChartPoint?
 
-        for point in line.points.sorted(by: { $0.timestamp < $1.timestamp }) {
+        for point in renderedPoints {
             guard let value = point.value, value.isFinite else {
                 previous = nil
                 continue
@@ -160,6 +162,29 @@ struct HistoryChartView: View {
         }
 
         strokeSolidPath(solidPath, context: context, tint: line.tint, seriesIndex: seriesIndex, hasSegment: hasSolidSegment)
+    }
+
+    private var maxRenderedPointCount: Int {
+        let duration = timeDomain.upperBound.timeIntervalSince(timeDomain.lowerBound)
+        if duration <= 20 * 60 {
+            return 300
+        }
+        if duration <= 26 * 60 * 60 {
+            return 240
+        }
+        return 336
+    }
+
+    private func downsample(_ points: [MetricChartPoint], maxCount: Int) -> [MetricChartPoint] {
+        guard maxCount > 1, points.count > maxCount else {
+            return points
+        }
+
+        let step = Double(points.count - 1) / Double(maxCount - 1)
+        return (0..<maxCount).map { position in
+            let index = min(Int((Double(position) * step).rounded()), points.count - 1)
+            return points[index]
+        }
     }
 
     private func displayValue(_ value: Double, compressingByteRates: Bool) -> Double {

@@ -38,8 +38,8 @@ import Testing
 }
 
 @Test func chartTimeWindowDurationsMatchDisplayPolicy() {
-    #expect(ChartTimeWindow.realtime.duration == 5 * 60)
+    #expect(ChartTimeWindow.realtime.duration == 15 * 60)
     #expect(ChartTimeWindow.day.duration == 24 * 60 * 60)
     #expect(ChartTimeWindow.week.duration == 7 * 24 * 60 * 60)
-    #expect(ChartTimeWindow.realtime.summaryLabel == "Last 5m")
+    #expect(ChartTimeWindow.realtime.summaryLabel == "Last 15m")
 }

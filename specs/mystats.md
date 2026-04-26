@@ -60,7 +60,7 @@
 - CPU P-core/E-core 평균, 구분 가능할 때만
 - 네트워크 download/upload 속도
 - 디스크 read/write 속도
-- 최근 60초-5분 ring buffer 기반 그래프
+- 최근 15분 ring buffer 기반 그래프
 - 설정 저장
 - 로그인 시 자동 실행
 
@@ -624,7 +624,7 @@ VPN 트래픽:
 
 그래프는 최근 샘플만 보관한다.
 
-- 기본 표시 범위: 실시간, 최근 5분
+- 기본 표시 범위: 실시간, 최근 15분
 - 확장 표시 범위: 1일, 1주
 - UI history 저장 위치: 메모리
 - persistent metric log 저장 위치: `Application Support/mystats/MetricLogs`
@@ -647,9 +647,12 @@ persistent metric log policy:
 
 chart time window:
 
-- `Realtime`: 최근 5분 raw sample. 메뉴바 sparkline과 같은 raw ring buffer 범위를 사용한다.
+- `Realtime`: 최근 15분 raw sample. 메뉴바 sparkline과 같은 raw ring buffer 범위를 사용한다.
 - `1 Day`: 최근 24시간 minute rollup
 - `1 Week`: 최근 7일 minute rollup
+- popover chart는 긴 time window의 모든 point를 그대로 그리지 않는다. 통계와 current 값은 전체 window 데이터를 사용하되, 렌더링은 window별 표시 한도에 맞춰 downsample한다.
+- 기본 렌더링 한도는 `Realtime` 약 300 points, `1 Day` 약 240 points, `1 Week` 약 336 points로 둔다.
+- downsample은 첫 point와 최신 point를 보존하고, missing value를 `0`으로 채우지 않는다.
 
 chart scale:
 
@@ -672,9 +675,9 @@ chart scale:
 - 값이 실제로 0 근처에 걸쳐 있는 경우에는 0을 하한으로 포함하지만, 모든 값이 0에서 멀리 떨어져 있으면 무조건 0에 고정하지 않는다.
 - 메뉴바 sparkline은 숫자 축 label이 없는 trend preview이므로, 다중선 지표의 각 선을 독립적으로 정규화해 낮은 magnitude의 upload/write 선도 변화가 보이게 한다.
 - 메뉴바 다중선 sparkline은 동일한 작은 plot rect 안에서 선이 겹쳐 한 줄처럼 보이면 안 된다. Network/Disk는 각 방향을 분리된 vertical lane 또는 동등한 분리 표현으로 렌더링한다.
-- 메뉴바 sparkline은 5분 raw sample 전체를 그대로 1px 이하 간격에 밀어 넣지 않고, 작은 폭에서 선 모양이 뭉개지지 않도록 표시 가능한 point 수로 downsample한다.
+- 메뉴바 sparkline은 realtime raw sample 전체를 그대로 1px 이하 간격에 밀어 넣지 않고, 작은 폭에서 선 모양이 뭉개지지 않도록 표시 가능한 point 수로 downsample한다.
 - preview/sample 데이터는 사인파 같은 주기 함수를 쓰지 않는다. 실제 collector가 들어오기 전에는 random walk와 occasional spike 형태의 deterministic preview를 사용한다.
-- preview mode는 앱 시작 직후 chart가 일직선처럼 보이지 않도록 최근 5분 raw sample을 deterministic preview data로 seed한다.
+- preview mode는 앱 시작 직후 chart가 일직선처럼 보이지 않도록 realtime raw sample을 deterministic preview data로 seed한다.
 - 실제 collector mode에서는 측정되지 않은 시간을 preview 값이나 0으로 채우지 않는다.
 
 chart gap policy:

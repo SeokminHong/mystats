@@ -4,6 +4,8 @@ import MystatsCore
 
 @MainActor
 final class MetricStore: ObservableObject {
+    private static let realtimeSampleCapacity = Int(ChartTimeWindow.realtime.duration)
+
     @Published private(set) var snapshot: MetricSnapshot
     @Published private(set) var history: RingBuffer<MetricSnapshot>
 
@@ -18,11 +20,11 @@ final class MetricStore: ObservableObject {
             since: initialSnapshot.timestamp.addingTimeInterval(-PersistentMetricLogStore.retention),
             now: initialSnapshot.timestamp
         )
-        var initialHistory = RingBuffer<MetricSnapshot>(capacity: 300)
+        var initialHistory = RingBuffer<MetricSnapshot>(capacity: Self.realtimeSampleCapacity)
 
         let realtimeSeed = persistedSnapshots.isEmpty
-            ? Self.seedRealtimeHistory(endingAt: initialSnapshot.timestamp, capacity: 300)
-            : Array(persistedSnapshots.suffix(300))
+            ? Self.seedRealtimeHistory(endingAt: initialSnapshot.timestamp, capacity: Self.realtimeSampleCapacity)
+            : Array(persistedSnapshots.suffix(Self.realtimeSampleCapacity))
         for snapshot in realtimeSeed {
             initialHistory.append(snapshot)
         }

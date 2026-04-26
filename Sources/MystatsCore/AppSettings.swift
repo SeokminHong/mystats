@@ -120,7 +120,7 @@ public enum ChartTimeWindow: String, CaseIterable, Codable, Equatable, Identifia
     public var duration: TimeInterval {
         switch self {
         case .realtime:
-            return 5 * 60
+            return 15 * 60
         case .day:
             return 24 * 60 * 60
         case .week:
@@ -131,7 +131,7 @@ public enum ChartTimeWindow: String, CaseIterable, Codable, Equatable, Identifia
     public var summaryLabel: String {
         switch self {
         case .realtime:
-            return "Last 5m"
+            return "Last 15m"
         case .day:
             return "Last 24h"
         case .week:
