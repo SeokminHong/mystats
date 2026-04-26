@@ -41,8 +41,9 @@ enum StatusItemVisualQARenderer {
 
     private static func previewHistory() -> [MetricSnapshot] {
         let end = Date()
-        return (0..<300).map { index in
-            PreviewMetricFactory.snapshot(at: end.addingTimeInterval(TimeInterval(index - 299)))
+        let count = Int(ChartTimeWindow.realtime.duration)
+        return (0..<count).map { index in
+            PreviewMetricFactory.snapshot(at: end.addingTimeInterval(TimeInterval(index - count + 1)))
         }
     }
 

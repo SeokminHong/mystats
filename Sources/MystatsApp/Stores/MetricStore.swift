@@ -12,6 +12,7 @@ final class MetricStore: ObservableObject {
     private let persistentLogStore: PersistentMetricLogStore
     private var minuteArchive: [MetricSnapshot]
     private var previewTimer: Timer?
+    private var networkCollector = NetworkRateCollector()
 
     init(persistentLogStore: PersistentMetricLogStore = PersistentMetricLogStore()) {
         self.persistentLogStore = persistentLogStore
@@ -36,25 +37,27 @@ final class MetricStore: ObservableObject {
             : Self.minuteRollups(from: persistedSnapshots, endingAt: initialSnapshot.timestamp)
     }
 
-    func startPreviewUpdates() {
+    func startPreviewUpdates(includeVPNInterfaces: @escaping () -> Bool = { false }) {
         guard previewTimer == nil else {
             return
         }
 
         previewTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                self?.apply(PreviewMetricFactory.snapshot())
+                self?.applyPreviewSnapshot(includeVPNInterfaces: includeVPNInterfaces())
             }
         }
     }
 
-    func apply(_ snapshot: MetricSnapshot) {
+    func apply(_ snapshot: MetricSnapshot, persists: Bool = true) {
         self.snapshot = snapshot
         var nextHistory = history
         nextHistory.append(snapshot)
         history = nextHistory
         appendMinuteRollup(snapshot)
-        persistentLogStore.append(snapshot)
+        if persists {
+            persistentLogStore.append(snapshot)
+        }
     }
 
     func history(for window: ChartTimeWindow) -> [MetricSnapshot] {
@@ -89,12 +92,30 @@ final class MetricStore: ObservableObject {
         }
     }
 
+    private func applyPreviewSnapshot(includeVPNInterfaces: Bool) {
+        let timestamp = Date()
+        let network = networkCollector.sample(includeVPNInterfaces: includeVPNInterfaces)
+        let snapshot = PreviewMetricFactory.snapshot(at: timestamp).replacingNetwork(network)
+
+        apply(snapshot, persists: false)
+        persistentLogStore.append(
+            MetricSnapshot(
+                timestamp: timestamp,
+                cpu: nil,
+                gpu: nil,
+                thermal: nil,
+                disk: nil,
+                network: network
+            )
+        )
+    }
+
     private static func seedMinuteArchive(endingAt date: Date) -> [MetricSnapshot] {
         let end = minuteBucket(date)
         let count = 7 * 24 * 60
         return (0..<count).map { index in
             let timestamp = Date(timeIntervalSince1970: TimeInterval(end - (count - index) * 60))
-            return PreviewMetricFactory.snapshot(at: timestamp)
+            return PreviewMetricFactory.snapshot(at: timestamp).replacingNetwork(nil)
         }
     }
 
@@ -102,7 +123,7 @@ final class MetricStore: ObservableObject {
         let end = Int(date.timeIntervalSince1970)
         return (0..<capacity).map { index in
             let timestamp = Date(timeIntervalSince1970: TimeInterval(end - (capacity - index - 1)))
-            return PreviewMetricFactory.snapshot(at: timestamp)
+            return PreviewMetricFactory.snapshot(at: timestamp).replacingNetwork(nil)
         }
     }
 

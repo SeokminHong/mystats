@@ -36,5 +36,15 @@ public extension MetricSnapshot {
             network: nil
         )
     }
-}
 
+    func replacingNetwork(_ network: NetworkMetrics?) -> MetricSnapshot {
+        MetricSnapshot(
+            timestamp: timestamp,
+            cpu: cpu,
+            gpu: gpu,
+            thermal: thermal,
+            disk: disk,
+            network: network
+        )
+    }
+}

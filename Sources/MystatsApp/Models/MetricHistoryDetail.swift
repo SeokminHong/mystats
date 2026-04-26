@@ -201,7 +201,10 @@ enum MetricHistoryResolver {
                 MetricChartSeries(id: "network-down", label: "Download", points: points(chartHistory) { $0.network?.downloadBytesPerSecond }, tint: .green, formattedCurrent: network.map { ByteRateFormatter.long($0.downloadBytesPerSecond) } ?? "N/A", scale: .independentTrend),
                 MetricChartSeries(id: "network-up", label: "Upload", points: points(chartHistory) { $0.network?.uploadBytesPerSecond }, tint: .mint, formattedCurrent: network.map { ByteRateFormatter.long($0.uploadBytesPerSecond) } ?? "N/A", scale: .independentTrend)
             ],
-            stats: byteRateStats(downloadValues),
+            stats: byteRateStats(
+                downloadValues,
+                current: network.map { Double($0.downloadBytesPerSecond) }
+            ),
             detailRows: [
                 MetricDetailRow(id: "download", label: "Download", value: network.map { ByteRateFormatter.long($0.downloadBytesPerSecond) } ?? "Unavailable"),
                 MetricDetailRow(id: "upload", label: "Upload", value: network.map { ByteRateFormatter.long($0.uploadBytesPerSecond) } ?? "Unavailable"),
@@ -231,7 +234,10 @@ enum MetricHistoryResolver {
                 MetricChartSeries(id: "disk-read", label: "Read", points: points(chartHistory) { $0.disk?.readBytesPerSecond }, tint: .teal, formattedCurrent: disk.map { ByteRateFormatter.long($0.readBytesPerSecond) } ?? "N/A", scale: .independentTrend),
                 MetricChartSeries(id: "disk-write", label: "Write", points: points(chartHistory) { $0.disk?.writeBytesPerSecond }, tint: .cyan, formattedCurrent: disk.map { ByteRateFormatter.long($0.writeBytesPerSecond) } ?? "N/A", scale: .independentTrend)
             ],
-            stats: byteRateStats(readValues),
+            stats: byteRateStats(
+                readValues,
+                current: disk.map { Double($0.readBytesPerSecond) }
+            ),
             detailRows: [
                 MetricDetailRow(id: "read", label: "Read", value: disk.map { ByteRateFormatter.long($0.readBytesPerSecond) } ?? "Unavailable"),
                 MetricDetailRow(id: "write", label: "Write", value: disk.map { ByteRateFormatter.long($0.writeBytesPerSecond) } ?? "Unavailable")
@@ -247,8 +253,10 @@ enum MetricHistoryResolver {
         _ snapshot: MetricSnapshot,
         in history: [MetricSnapshot]
     ) -> [MetricSnapshot] {
-        guard history.last?.timestamp != snapshot.timestamp else {
-            return history
+        if history.last?.timestamp == snapshot.timestamp {
+            var updated = history
+            updated[updated.count - 1] = snapshot
+            return updated
         }
         return history + [snapshot]
     }
@@ -271,14 +279,18 @@ enum MetricHistoryResolver {
         }
     }
 
-    private static func byteRateStats(_ values: [Double]) -> [MetricSummaryStat] {
-        numericStats(values, formatter: byteRate)
+    private static func byteRateStats(_ values: [Double], current: Double?) -> [MetricSummaryStat] {
+        numericStats(values, current: current, formatter: byteRate)
     }
 
-    private static func numericStats(_ values: [Double], formatter: (Double) -> String) -> [MetricSummaryStat] {
+    private static func numericStats(
+        _ values: [Double],
+        current: Double? = nil,
+        formatter: (Double) -> String
+    ) -> [MetricSummaryStat] {
         guard !values.isEmpty else {
             return [
-                MetricSummaryStat(id: "current", label: "Current", value: "N/A"),
+                MetricSummaryStat(id: "current", label: "Current", value: current.map(formatter) ?? "N/A"),
                 MetricSummaryStat(id: "min", label: "Min", value: "N/A"),
                 MetricSummaryStat(id: "max", label: "Max", value: "N/A"),
                 MetricSummaryStat(id: "avg", label: "Avg", value: "N/A")
@@ -287,7 +299,7 @@ enum MetricHistoryResolver {
 
         let average = values.reduce(0, +) / Double(values.count)
         return [
-            MetricSummaryStat(id: "current", label: "Current", value: formatter(values.last ?? 0)),
+            MetricSummaryStat(id: "current", label: "Current", value: formatter(current ?? values.last ?? 0)),
             MetricSummaryStat(id: "min", label: "Min", value: formatter(values.min() ?? 0)),
             MetricSummaryStat(id: "max", label: "Max", value: formatter(values.max() ?? 0)),
             MetricSummaryStat(id: "avg", label: "Avg", value: formatter(average))

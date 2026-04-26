@@ -28,7 +28,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         self.metricStore = metricStore
         self.settingsStore = settingsStore
-        metricStore.startPreviewUpdates()
+        metricStore.startPreviewUpdates { settingsStore.settings.includeVPNInterfaces }
         syncStatusItems()
         renderStatusItems()
 
@@ -351,23 +351,39 @@ enum StatusItemImageRenderer {
         }
 
         let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
+        let chartGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
         let textX: CGFloat = item.presentation.showsMenuBarIcon ? 15 : 1
-        let textWidth = width - textX - chartWidth - 1
-        let textAlignment: NSTextAlignment = itemSettings.showsMenuBarSparkline ? .right : .left
+        let textWidth = width - textX - chartWidth - chartGap
+        let alignsTextTowardChart = itemSettings.showsMenuBarSparkline
 
         switch display.menuLayout {
         case .single(let primary, let secondary, let secondaryConfigurable):
             let primaryLine = "\(item.presentation.title) \(primary)"
+            let primaryRect = compactTextRect(
+                for: primaryLine,
+                in: NSRect(x: textX, y: 10, width: textWidth, height: 9),
+                size: 8.8,
+                weight: .semibold,
+                alignsTowardChart: alignsTextTowardChart
+            )
             if secondaryConfigurable, itemSettings.showsSecondaryValue, let secondary {
-                drawText(primaryLine, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), size: 8.8, color: .labelColor, weight: .semibold, alignment: textAlignment)
-                drawText(secondary, in: NSRect(x: textX, y: 2, width: textWidth, height: 8), size: 7.5, color: .secondaryLabelColor, weight: .regular, alignment: textAlignment)
+                let secondaryRect = compactTextRect(
+                    for: secondary,
+                    in: NSRect(x: textX, y: 2, width: textWidth, height: 8),
+                    size: 7.5,
+                    weight: .regular,
+                    alignsTowardChart: alignsTextTowardChart
+                )
+                drawText(primaryLine, in: primaryRect, size: 8.8, color: .labelColor, weight: .semibold)
+                drawText(secondary, in: secondaryRect, size: 7.5, color: .secondaryLabelColor, weight: .regular)
             } else {
-                drawText(primaryLine, in: NSRect(x: textX, y: 5, width: textWidth, height: 10), size: 8.8, color: .labelColor, weight: .semibold, alignment: textAlignment)
+                let centeredRect = NSRect(x: primaryRect.minX, y: 5, width: primaryRect.width, height: 10)
+                drawText(primaryLine, in: centeredRect, size: 8.8, color: .labelColor, weight: .semibold)
             }
 
         case .paired(let first, let second):
-            drawPeerValue(first, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), valueAlignment: textAlignment)
-            drawPeerValue(second, in: NSRect(x: textX, y: 2, width: textWidth, height: 9), valueAlignment: textAlignment)
+            drawPeerValue(first, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), alignsTowardChart: alignsTextTowardChart)
+            drawPeerValue(second, in: NSRect(x: textX, y: 2, width: textWidth, height: 9), alignsTowardChart: alignsTextTowardChart)
         }
 
         if itemSettings.showsMenuBarSparkline {
@@ -391,12 +407,10 @@ enum StatusItemImageRenderer {
         in rect: NSRect,
         size: CGFloat,
         color: NSColor,
-        weight: NSFont.Weight,
-        alignment: NSTextAlignment = .left
+        weight: NSFont.Weight
     ) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byClipping
-        paragraph.alignment = alignment
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight),
             .foregroundColor: color,
@@ -408,10 +422,42 @@ enum StatusItemImageRenderer {
     private static func drawPeerValue(
         _ value: MetricMenuPeerValue,
         in rect: NSRect,
-        valueAlignment: NSTextAlignment
+        alignsTowardChart: Bool
     ) {
-        drawText(value.label, in: NSRect(x: rect.minX, y: rect.minY, width: 10, height: rect.height), size: 8.4, color: .secondaryLabelColor, weight: .semibold)
-        drawText(value.value, in: NSRect(x: rect.minX + 12, y: rect.minY, width: rect.width - 12, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold, alignment: valueAlignment)
+        let labelWidth = ceil(textWidth(value.label, size: 8.4, weight: .semibold))
+        let gap: CGFloat = 3
+        let availableValueWidth = max(rect.width - labelWidth - gap, 1)
+        let valueWidth = min(ceil(textWidth(value.value, size: 8.4, weight: .semibold)), availableValueWidth)
+        let groupWidth = min(labelWidth + gap + valueWidth, rect.width)
+        let groupX = alignsTowardChart ? max(rect.maxX - groupWidth, rect.minX) : rect.minX
+
+        drawText(value.label, in: NSRect(x: groupX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: .secondaryLabelColor, weight: .semibold)
+        drawText(value.value, in: NSRect(x: groupX + labelWidth + gap, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold)
+    }
+
+    private static func compactTextRect(
+        for text: String,
+        in rect: NSRect,
+        size: CGFloat,
+        weight: NSFont.Weight,
+        alignsTowardChart: Bool
+    ) -> NSRect {
+        let measuredWidth = min(ceil(textWidth(text, size: size, weight: weight)), rect.width)
+        guard alignsTowardChart else {
+            return NSRect(x: rect.minX, y: rect.minY, width: measuredWidth, height: rect.height)
+        }
+
+        let maxLeadingShift: CGFloat = 6
+        let rightAlignedX = max(rect.maxX - measuredWidth, rect.minX)
+        let x = min(rightAlignedX, rect.minX + maxLeadingShift)
+        return NSRect(x: x, y: rect.minY, width: measuredWidth, height: rect.height)
+    }
+
+    private static func textWidth(_ text: String, size: CGFloat, weight: NSFont.Weight) -> CGFloat {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight)
+        ]
+        return (text as NSString).size(withAttributes: attributes).width
     }
 
     private static func drawSparkline(_ series: [MetricMenuChartSeries], in rect: NSRect, color: NSColor) {

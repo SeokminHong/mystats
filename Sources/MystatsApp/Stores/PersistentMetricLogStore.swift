@@ -104,7 +104,10 @@ final class PersistentMetricLogStore {
             guard let lineData = String(line).data(using: .utf8) else {
                 return nil
             }
-            return try? decoder.decode(PersistentMetricLogRecord.self, from: lineData).snapshot
+            guard let record = try? decoder.decode(PersistentMetricLogRecord.self, from: lineData) else {
+                return nil
+            }
+            return record.restoredSnapshot
         }
     }
 
@@ -143,6 +146,7 @@ final class PersistentMetricLogStore {
 }
 
 private struct PersistentMetricLogRecord: Codable {
+    let source: String?
     let timestamp: Date
     let cpu: CPULogRecord?
     let gpu: GPULogRecord?
@@ -151,6 +155,7 @@ private struct PersistentMetricLogRecord: Codable {
     let network: NetworkLogRecord?
 
     init(snapshot: MetricSnapshot) {
+        self.source = "live"
         self.timestamp = snapshot.timestamp
         self.cpu = snapshot.cpu.map(CPULogRecord.init)
         self.gpu = snapshot.gpu.map(GPULogRecord.init)
@@ -159,8 +164,12 @@ private struct PersistentMetricLogRecord: Codable {
         self.network = snapshot.network.map(NetworkLogRecord.init)
     }
 
-    var snapshot: MetricSnapshot {
-        MetricSnapshot(
+    var restoredSnapshot: MetricSnapshot? {
+        guard source == "live" else {
+            return nil
+        }
+
+        return MetricSnapshot(
             timestamp: timestamp,
             cpu: cpu?.metrics,
             gpu: gpu?.metrics,

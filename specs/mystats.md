@@ -537,6 +537,9 @@ MVP 합산 정책:
 
 - `getifaddrs()`로 인터페이스 목록과 통계를 읽는다.
 - byte counter의 샘플 간 delta와 elapsed time으로 download/upload 속도를 계산한다.
+- Network 지표는 preview 값으로 대체하지 않는다. CPU/GPU/Disk 등 다른 collector가 아직 preview 단계여도 Network는 실제 counter delta를 우선 사용한다.
+- 첫 샘플처럼 이전 counter가 없어 delta를 계산할 수 없는 경우에만 0으로 시작하고, 이후 샘플부터 실제 rate를 표시한다.
+- preview snapshot은 Network history와 persistent log에 쓰지 않는다. 기존 preview log는 live source 표식이 없으면 Network history 복원에서 제외한다.
 
 계산:
 
@@ -571,6 +574,7 @@ VPN 트래픽:
 
 - Wi-Fi 다운로드 중 download 값이 증가한다.
 - 업로드 중 upload 값이 증가한다.
+- metric log의 최근 window에서 network 값의 min/max/unique count를 확인해 값이 고정되어 있지 않은지 검증한다.
 - VPN on/off 설정이 집계 대상에 반영된다.
 - AirDrop/nearby 관련 인터페이스가 기본값에 섞이지 않는다.
 
@@ -663,13 +667,14 @@ chart scale:
 - 팝오버의 방향성 byte-rate chart도 두 선이 겹쳐 한 줄처럼 보이면 안 된다. Network/Disk는 같은 chart 영역 안에서 방향별 vertical lane을 나누어 두 trend를 모두 읽을 수 있게 한다.
 - chart y값은 current/detail/log에 쓰는 raw metric 값과 같은 `bytesPerSecond` 값을 사용한다. `4.3 MB/s` 같은 표시 문자열을 다시 파싱해 y값으로 쓰지 않는다.
 - chart legend의 current 값은 history 배열의 마지막 값이 아니라 현재 snapshot을 기준으로 표시한다. history가 stale이거나 최신 snapshot을 아직 포함하지 않아도 메뉴바 current, detail current, legend current가 서로 달라져서는 안 된다.
+- chart summary의 Current 값도 현재 snapshot을 기준으로 표시한다. history 마지막 값이 오래되었거나 같은 timestamp의 stale 값이면 최신 snapshot으로 교체해 chart와 summary가 `Zero KB/s` 같은 오래된 값을 표시하지 않게 한다.
 - chart series는 현재 snapshot을 반드시 포함해야 한다. selected time window history가 최신 snapshot을 포함하지 못한 경우 chart resolver가 현재 snapshot을 마지막 point로 추가한다.
 - 독립 trend 축을 쓰는 chart는 오른쪽 축 label을 정확한 byte-rate 숫자로 표시하지 않는다. 정확한 현재값, min/max/avg는 legend와 summary stat에서 제공한다.
 - 독립 trend 축도 순간 spike 하나 때문에 정상 구간이 일직선처럼 눌리면 안 된다. domain은 robust percentile 기반으로 잡고, 실제 min/max/current는 summary와 detail 값으로 보존한다.
 - trend 축의 목적은 절대 byte-rate 비교가 아니라 변화량을 읽는 것이다. 따라서 중앙 percentile 범위를 우선 사용하고, 최소 표시 span은 절대값 magnitude보다 실제 변화가 보이는 쪽을 우선한다.
 - trend 축은 latest/current sample을 반드시 domain 안에 포함하고 padding을 둔다. 최신 값이 percentile 밖에 있다는 이유로 chart 상단/하단에 붙어 일직선처럼 보여서는 안 된다.
 - Network/Disk trend chart는 raw `bytesPerSecond`를 저장하고 summary/detail에 그대로 표시하되, y좌표 렌더링에는 `log1p` 같은 단조 압축 변환을 적용할 수 있다. 이는 spike와 평상시 값이 함께 있을 때 선이 일직선처럼 눌리는 것을 막기 위한 표시 정책이다.
-- Network/Disk popover trend chart는 얇은 선만으로 변화가 읽히지 않으면 같은 y값으로 낮은 대비의 vertical fill을 함께 그린다. fill은 값을 새로 계산하지 않고 선과 동일한 raw metric 기반 display transform을 사용한다.
+- Network/Disk popover trend chart는 값 변화가 fill band에 묻혀 일직선처럼 보이면 안 된다. 기본 렌더링은 선을 우선하고, fill은 선의 변화량을 가리지 않는 경우에만 사용한다.
 - adaptive 축은 값의 변화가 작아도 일직선처럼 눌리지 않도록 최소 표시 범위를 보장한다.
 - adaptive 축은 순간 spike 하나가 전체 그래프를 평평하게 만들지 않도록 outlier에 덜 민감한 robust domain을 사용한다. 실제 min/max는 summary stat에 표시한다.
 - 값이 실제로 0 근처에 걸쳐 있는 경우에는 0을 하한으로 포함하지만, 모든 값이 0에서 멀리 떨어져 있으면 무조건 0에 고정하지 않는다.
@@ -740,6 +745,7 @@ C32 G18 61°
 - 고정폭은 값이 잘리지 않는 범위 안에서 compact하게 유지한다. 기준 폭은 chart on 상태에서 CPU 112pt, GPU 106pt, Temperature 106pt, Network 102pt, Disk 128pt로 둔다.
 - 메뉴바 chart를 끈 항목은 chart 영역만큼 `NSStatusItem.length`를 줄인다. chart off 상태에서도 해당 상태 안에서는 고정폭을 유지한다.
 - status item 내부 렌더링은 불필요한 좌우 padding을 두지 않고, icon/text/sparkline을 1-2px 단위 여백으로 조밀하게 배치한다.
+- chart가 켜진 상태에서 값과 chart 사이에는 4pt 안팎의 일정한 여백을 둔다.
 - 숫자는 monospaced digit을 사용한다.
 - 메뉴바 텍스트는 현재 상태 요약을 담되 1-2줄 안에 들어오게 압축한다.
 - 메뉴바 표시 모델은 모든 지표에 `primary/secondary`를 강제하지 않는다.
@@ -750,6 +756,8 @@ C32 G18 61°
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
 - Network 메뉴바 항목은 download/upload 화살표 자체가 방향과 지표 종류를 나타내므로 별도 leading system icon을 표시하지 않는다.
 - chart가 켜진 메뉴바 항목은 텍스트를 chart 방향으로 정렬해 값 끝과 chart 시작 사이의 여백이 항목별로 비슷하게 보이도록 한다.
+- CPU/GPU/Temperature처럼 leading icon이 있는 항목은 icon과 label/value 그룹 사이의 여백이 커지지 않도록 label/value 그룹의 오른쪽 정렬 이동량을 제한한다.
+- Network/Disk peer pair 항목은 방향 label과 값 사이의 여백을 3pt 안팎으로 고정하고, label만 왼쪽에 남겨 값과 분리되어 보이지 않게 한다.
 - 메뉴바 sparkline chart 폭은 모든 지표에서 Disk 기준인 42pt로 통일한다.
 - Network 메뉴바 항목은 leading icon이 없고 값이 두 줄로 압축되므로 end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 102pt, chart off 56pt, chart 42pt로 둔다.
 - Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, end 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 128pt, chart off 82pt, chart 42pt로 둔다.
@@ -766,6 +774,7 @@ C32 G18 61°
 - 값이 `unsupported` 또는 `unavailable`인 항목은 메뉴바에서 숨길 수 있다.
 - 사용자가 settings window의 metric tab에서 메뉴바 표시 항목을 선택할 수 있다.
 - 네트워크와 디스크 단위는 읽기 쉬운 단위로 자동 축약한다.
+- byte-rate 0 값은 `Zero KB/s`처럼 단어로 표시하지 않고 `0 KB/s`처럼 숫자로 표시한다.
 
 ## 19. 팝오버 UI
 

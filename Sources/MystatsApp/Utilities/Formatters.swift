@@ -21,6 +21,10 @@ enum ByteRateFormatter {
     }
 
     private static func formatted(_ bytesPerSecond: UInt64) -> String {
+        guard bytesPerSecond > 0 else {
+            return "0 KB"
+        }
+
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
@@ -48,4 +52,3 @@ enum TemperatureFormatter {
         }
     }
 }
-

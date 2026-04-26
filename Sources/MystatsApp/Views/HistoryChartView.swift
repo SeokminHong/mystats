@@ -44,9 +44,8 @@ struct HistoryChartView: View {
             )
 
             for (seriesIndex, line) in series.enumerated() where line.values.count > 1 {
-                let displayValues = independentTrendScale
-                    ? ChartDomainResolver.displayTrendValues(for: line.values)
-                    : line.values
+                let usesLogCompression = independentTrendScale && line.values.contains { $0 >= 1_024 }
+                let displayValues = usesLogCompression ? line.values.map(logCompressedValue) : line.values
                 let lineAxis = independentTrendScale ? trendAxisDomain(for: displayValues) : axis
                 let range = max(lineAxis.max - lineAxis.min, 0.0001)
                 let plotRect = independentTrendScale ? plotRects[seriesIndex] : plotRects[0]
@@ -58,7 +57,7 @@ struct HistoryChartView: View {
                     timeRange: timeDomain,
                     axis: lineAxis,
                     valueRange: range,
-                    compressesByteRates: independentTrendScale
+                    appliesLogCompression: usesLogCompression
                 )
             }
         }
@@ -114,7 +113,7 @@ struct HistoryChartView: View {
         timeRange: ClosedRange<Date>,
         axis: ChartAxis,
         valueRange: Double,
-        compressesByteRates: Bool = false
+        appliesLogCompression: Bool = false
     ) {
         let sortedPoints = line.points.sorted(by: { $0.timestamp < $1.timestamp })
         let renderedPoints = downsample(sortedPoints, maxCount: maxRenderedPointCount)
@@ -131,16 +130,12 @@ struct HistoryChartView: View {
 
             let current = renderedPoint(
                 timestamp: point.timestamp,
-                value: displayValue(value, compressingByteRates: compressesByteRates),
+                value: appliesLogCompression ? logCompressedValue(value) : value,
                 plotRect: plotRect,
                 timeRange: timeRange,
                 axis: axis,
                 valueRange: valueRange
             )
-            if compressesByteRates {
-                drawTrendFill(at: current.point, bottom: plotRect.maxY, context: context, tint: line.tint)
-            }
-
             guard let previousPoint = previous else {
                 solidPath.move(to: current.point)
                 previous = current
@@ -187,24 +182,8 @@ struct HistoryChartView: View {
         }
     }
 
-    private func displayValue(_ value: Double, compressingByteRates: Bool) -> Double {
-        guard compressingByteRates, value >= 1_024 else {
-            return value
-        }
-
-        return ChartDomainResolver.displayTrendValues(for: [value])[0]
-    }
-
-    private func drawTrendFill(
-        at point: CGPoint,
-        bottom: CGFloat,
-        context: GraphicsContext,
-        tint: Color
-    ) {
-        var path = Path()
-        path.move(to: CGPoint(x: point.x, y: bottom))
-        path.addLine(to: point)
-        context.stroke(path, with: .color(tint.opacity(0.12)), lineWidth: 1)
+    private func logCompressedValue(_ value: Double) -> Double {
+        log1p(max(value, 0))
     }
 
     private func renderedPoint(
