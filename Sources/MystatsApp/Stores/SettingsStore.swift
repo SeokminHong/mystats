@@ -29,6 +29,10 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    func isMenuBarItemEnabled(_ item: MenuBarItem) -> Bool {
+        settings.menuBarItems.contains(item)
+    }
+
     private func save(_ settings: AppSettings) {
         guard let data = try? JSONEncoder().encode(settings) else {
             return
