@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import MystatsCore
 
@@ -7,6 +8,8 @@ struct MystatsApp: App {
     @StateObject private var settingsStore = AppRuntime.shared.settingsStore
 
     init() {
+        NSApplication.shared.setActivationPolicy(.accessory)
+
         let runtime = AppRuntime.shared
         StatusBarController.shared.start(
             metricStore: runtime.metricStore,

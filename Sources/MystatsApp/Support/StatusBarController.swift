@@ -151,7 +151,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         guard let button = statusItems[item]?.statusItem.button else {
             return
         }
-        NSApp.activate(ignoringOtherApps: true)
+        NSApplication.shared.activate(ignoringOtherApps: true)
         togglePopover(for: item, relativeTo: button)
     }
 
@@ -163,8 +163,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     private func focusPopover(_ popover: NSPopover) {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApplication.shared.setActivationPolicy(.accessory)
+        NSApplication.shared.activate(ignoringOtherApps: true)
 
         DispatchQueue.main.async { [weak popover] in
             guard
@@ -202,7 +202,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         appResignObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didResignActiveNotification,
-            object: NSApp,
+            object: NSApplication.shared,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in

@@ -6,9 +6,9 @@ enum AppWindowController {
     private static var settingsWindow: NSWindow?
 
     static func activate() {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.unhide(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApplication.shared.setActivationPolicy(.accessory)
+        NSApplication.shared.unhide(nil)
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
     static func showSettings(metricStore: MetricStore, settingsStore: SettingsStore) {
@@ -64,6 +64,6 @@ enum AppWindowController {
     }
 
     static func quit() {
-        NSApp.terminate(nil)
+        NSApplication.shared.terminate(nil)
     }
 }

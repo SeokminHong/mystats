@@ -679,7 +679,8 @@ CPU | GPU | Temp | Network
 - 각 popover의 `Settings`는 설정 가능한 manager/settings window를 열고 앞으로 가져온다.
 - 각 popover의 `Quit mystats`는 앱을 종료한다.
 - 모든 metric item을 끄면 설정 접근 경로가 사라지므로, 마지막으로 켜진 metric item은 끌 수 없게 한다.
-- 초기 개발 단계의 앱 번들은 regular macOS app으로 동작하며 Dock 아이콘과 설정 창을 제공한다.
+- 앱 번들은 menu-bar-only accessory 앱으로 동작하며 Dock에는 표시하지 않는다.
+- 앱 아이콘은 단순한 rounded square + metric line 형태로 제공하고, 앱 번들 `CFBundleIconFile`에 포함한다.
 - 설정 창은 regular macOS window로 동작하며, 닫은 뒤에도 metric popover에서 다시 열 수 있어야 한다.
 
 기본 텍스트 예:
@@ -806,7 +807,8 @@ manager/settings window UI 정책:
 - manager/settings window는 같은 창을 재사용하며 window title은 `mystats Settings`로 둔다.
 - 창이 이미 열려 있으면 새 창을 중복 생성하지 않고 기존 창을 앞으로 가져온다.
 - 초기 개발 단계에서는 앱 실행 시 설정 창을 함께 열어 QA와 설정 접근성을 보장한다.
-- 완전한 menu-bar-only `LSUIElement` 배포 전환은 설정 창/종료/재열기 동작이 안정화된 뒤 별도 작업으로 진행한다.
+- 앱 번들의 `Info.plist`는 `LSUIElement=true`를 사용해 Dock 노출을 막는다.
+- 설정 창은 Dock 아이콘 없이도 앞으로 가져올 수 있어야 하며, 앱 activation policy는 `.accessory`를 유지한다.
 - status item 목록은 settings change 시 동기화하고, metric sample change 시 현재 status item label만 갱신한다.
 
 ## 21. 설정
