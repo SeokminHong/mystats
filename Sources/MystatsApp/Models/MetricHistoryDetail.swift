@@ -186,8 +186,9 @@ enum MetricHistoryResolver {
         windowLabel: String,
         timeDomain: ClosedRange<Date>
     ) -> MetricHistoryDetail {
-        let downloadValues = history.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
-        let uploadValues = history.compactMap { $0.network?.uploadBytesPerSecond }.map(Double.init)
+        let chartHistory = historyIncludingCurrent(snapshot, in: history)
+        let downloadValues = chartHistory.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
+        let uploadValues = chartHistory.compactMap { $0.network?.uploadBytesPerSecond }.map(Double.init)
         let network = snapshot.network
 
         return MetricHistoryDetail(
@@ -197,8 +198,8 @@ enum MetricHistoryResolver {
             timeDomain: timeDomain,
             sampleCount: max(downloadValues.count, uploadValues.count),
             series: [
-                MetricChartSeries(id: "network-down", label: "Download", points: points(history) { $0.network?.downloadBytesPerSecond }, tint: .green, formattedCurrent: downloadValues.last.map(byteRate) ?? "N/A", scale: .independentTrend),
-                MetricChartSeries(id: "network-up", label: "Upload", points: points(history) { $0.network?.uploadBytesPerSecond }, tint: .mint, formattedCurrent: uploadValues.last.map(byteRate) ?? "N/A", scale: .independentTrend)
+                MetricChartSeries(id: "network-down", label: "Download", points: points(chartHistory) { $0.network?.downloadBytesPerSecond }, tint: .green, formattedCurrent: network.map { ByteRateFormatter.long($0.downloadBytesPerSecond) } ?? "N/A", scale: .independentTrend),
+                MetricChartSeries(id: "network-up", label: "Upload", points: points(chartHistory) { $0.network?.uploadBytesPerSecond }, tint: .mint, formattedCurrent: network.map { ByteRateFormatter.long($0.uploadBytesPerSecond) } ?? "N/A", scale: .independentTrend)
             ],
             stats: byteRateStats(downloadValues),
             detailRows: [
@@ -215,8 +216,9 @@ enum MetricHistoryResolver {
         windowLabel: String,
         timeDomain: ClosedRange<Date>
     ) -> MetricHistoryDetail {
-        let readValues = history.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
-        let writeValues = history.compactMap { $0.disk?.writeBytesPerSecond }.map(Double.init)
+        let chartHistory = historyIncludingCurrent(snapshot, in: history)
+        let readValues = chartHistory.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
+        let writeValues = chartHistory.compactMap { $0.disk?.writeBytesPerSecond }.map(Double.init)
         let disk = snapshot.disk
 
         return MetricHistoryDetail(
@@ -226,8 +228,8 @@ enum MetricHistoryResolver {
             timeDomain: timeDomain,
             sampleCount: max(readValues.count, writeValues.count),
             series: [
-                MetricChartSeries(id: "disk-read", label: "Read", points: points(history) { $0.disk?.readBytesPerSecond }, tint: .teal, formattedCurrent: readValues.last.map(byteRate) ?? "N/A", scale: .independentTrend),
-                MetricChartSeries(id: "disk-write", label: "Write", points: points(history) { $0.disk?.writeBytesPerSecond }, tint: .cyan, formattedCurrent: writeValues.last.map(byteRate) ?? "N/A", scale: .independentTrend)
+                MetricChartSeries(id: "disk-read", label: "Read", points: points(chartHistory) { $0.disk?.readBytesPerSecond }, tint: .teal, formattedCurrent: disk.map { ByteRateFormatter.long($0.readBytesPerSecond) } ?? "N/A", scale: .independentTrend),
+                MetricChartSeries(id: "disk-write", label: "Write", points: points(chartHistory) { $0.disk?.writeBytesPerSecond }, tint: .cyan, formattedCurrent: disk.map { ByteRateFormatter.long($0.writeBytesPerSecond) } ?? "N/A", scale: .independentTrend)
             ],
             stats: byteRateStats(readValues),
             detailRows: [
@@ -239,6 +241,16 @@ enum MetricHistoryResolver {
 
     private static func percentStats(_ values: [Double]) -> [MetricSummaryStat] {
         numericStats(values, formatter: PercentFormatter.long)
+    }
+
+    private static func historyIncludingCurrent(
+        _ snapshot: MetricSnapshot,
+        in history: [MetricSnapshot]
+    ) -> [MetricSnapshot] {
+        guard history.last?.timestamp != snapshot.timestamp else {
+            return history
+        }
+        return history + [snapshot]
     }
 
     private static func points(

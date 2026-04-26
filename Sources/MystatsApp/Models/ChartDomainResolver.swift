@@ -1,9 +1,19 @@
+import Foundation
+
 struct MetricValueDomain {
     let lower: Double
     let upper: Double
 }
 
 enum ChartDomainResolver {
+    static func displayTrendValues(for values: [Double]) -> [Double] {
+        guard values.contains(where: { $0 >= 1_024 }) else {
+            return values
+        }
+
+        return values.map { log1p(max($0, 0)) }
+    }
+
     static func downsample(_ values: [Double], maxCount: Int) -> [Double] {
         guard maxCount > 1, values.count > maxCount else {
             return values
@@ -16,15 +26,24 @@ enum ChartDomainResolver {
     }
 
     static func trendDomain(for values: [Double]) -> MetricValueDomain {
-        let lowerValue = values.min() ?? 0
-        let upperValue = values.max() ?? lowerValue
-        let rawSpan = upperValue - lowerValue
-        let magnitude = max(abs(upperValue), abs(lowerValue))
-        let minimumSpan = max(magnitude * 0.08, 1)
+        let sorted = values.sorted()
+        guard let first = sorted.first, let last = sorted.last else {
+            return MetricValueDomain(lower: 0, upper: 1)
+        }
+
+        let latestValue = values.last ?? last
+        let percentileLower = sorted.count >= 8 ? percentile(0.2, in: sorted) : first
+        let percentileUpper = sorted.count >= 8 ? percentile(0.8, in: sorted) : last
+        let rawLower = min(percentileLower, latestValue)
+        let rawUpper = max(percentileUpper, latestValue)
+        let rawSpan = rawUpper - rawLower
+        let magnitude = max(abs(rawUpper), abs(rawLower))
+        let minimumSpan = max(magnitude * 0.02, 1)
         let span = max(rawSpan, minimumSpan)
-        let center = (lowerValue + upperValue) / 2
-        let lower = center - span / 2
-        var upper = center + span / 2
+        let padding = span * 0.12
+        let center = (rawLower + rawUpper) / 2
+        let lower = center - span / 2 - padding
+        var upper = center + span / 2 + padding
 
         if upper <= lower {
             upper = lower + 1

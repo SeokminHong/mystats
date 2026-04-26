@@ -44,7 +44,10 @@ struct HistoryChartView: View {
             )
 
             for (seriesIndex, line) in series.enumerated() where line.values.count > 1 {
-                let lineAxis = independentTrendScale ? trendAxisDomain(for: line.values) : axis
+                let displayValues = independentTrendScale
+                    ? ChartDomainResolver.displayTrendValues(for: line.values)
+                    : line.values
+                let lineAxis = independentTrendScale ? trendAxisDomain(for: displayValues) : axis
                 let range = max(lineAxis.max - lineAxis.min, 0.0001)
                 let plotRect = independentTrendScale ? plotRects[seriesIndex] : plotRects[0]
                 drawSeries(
@@ -54,7 +57,8 @@ struct HistoryChartView: View {
                     plotRect: plotRect,
                     timeRange: timeDomain,
                     axis: lineAxis,
-                    valueRange: range
+                    valueRange: range,
+                    compressesByteRates: independentTrendScale
                 )
             }
         }
@@ -109,7 +113,8 @@ struct HistoryChartView: View {
         plotRect: CGRect,
         timeRange: ClosedRange<Date>,
         axis: ChartAxis,
-        valueRange: Double
+        valueRange: Double,
+        compressesByteRates: Bool = false
     ) {
         let gapThreshold = gapThreshold(for: line.points)
         var solidPath = Path()
@@ -124,12 +129,15 @@ struct HistoryChartView: View {
 
             let current = renderedPoint(
                 timestamp: point.timestamp,
-                value: value,
+                value: displayValue(value, compressingByteRates: compressesByteRates),
                 plotRect: plotRect,
                 timeRange: timeRange,
                 axis: axis,
                 valueRange: valueRange
             )
+            if compressesByteRates {
+                drawTrendFill(at: current.point, bottom: plotRect.maxY, context: context, tint: line.tint)
+            }
 
             guard let previousPoint = previous else {
                 solidPath.move(to: current.point)
@@ -152,6 +160,26 @@ struct HistoryChartView: View {
         }
 
         strokeSolidPath(solidPath, context: context, tint: line.tint, seriesIndex: seriesIndex, hasSegment: hasSolidSegment)
+    }
+
+    private func displayValue(_ value: Double, compressingByteRates: Bool) -> Double {
+        guard compressingByteRates, value >= 1_024 else {
+            return value
+        }
+
+        return ChartDomainResolver.displayTrendValues(for: [value])[0]
+    }
+
+    private func drawTrendFill(
+        at point: CGPoint,
+        bottom: CGFloat,
+        context: GraphicsContext,
+        tint: Color
+    ) {
+        var path = Path()
+        path.move(to: CGPoint(x: point.x, y: bottom))
+        path.addLine(to: point)
+        context.stroke(path, with: .color(tint.opacity(0.12)), lineWidth: 1)
     }
 
     private func renderedPoint(

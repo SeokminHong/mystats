@@ -8,6 +8,7 @@ struct SparklineChartView: View {
         Canvas { context, size in
             let sanitizedSeries = series
                 .map { ChartDomainResolver.downsample($0.values.filter(\.isFinite), maxCount: 32) }
+                .map { ChartDomainResolver.displayTrendValues(for: $0) }
                 .filter { $0.count > 1 }
 
             drawGrid(context: &context, size: size)

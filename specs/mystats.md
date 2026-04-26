@@ -658,7 +658,15 @@ chart scale:
 - network/disk byte rate는 현재 window의 min/max에 padding을 둔 adaptive 축을 사용한다.
 - network/disk처럼 방향이 둘인 byte-rate chart는 download/upload 또는 read/write의 magnitude 차이가 커도 두 선이 모두 보여야 한다. summary와 detail 값은 실제 단위를 유지하되, chart 선은 각 방향의 trend를 독립 축으로 정규화할 수 있다.
 - 팝오버의 방향성 byte-rate chart도 두 선이 겹쳐 한 줄처럼 보이면 안 된다. Network/Disk는 같은 chart 영역 안에서 방향별 vertical lane을 나누어 두 trend를 모두 읽을 수 있게 한다.
+- chart y값은 current/detail/log에 쓰는 raw metric 값과 같은 `bytesPerSecond` 값을 사용한다. `4.3 MB/s` 같은 표시 문자열을 다시 파싱해 y값으로 쓰지 않는다.
+- chart legend의 current 값은 history 배열의 마지막 값이 아니라 현재 snapshot을 기준으로 표시한다. history가 stale이거나 최신 snapshot을 아직 포함하지 않아도 메뉴바 current, detail current, legend current가 서로 달라져서는 안 된다.
+- chart series는 현재 snapshot을 반드시 포함해야 한다. selected time window history가 최신 snapshot을 포함하지 못한 경우 chart resolver가 현재 snapshot을 마지막 point로 추가한다.
 - 독립 trend 축을 쓰는 chart는 오른쪽 축 label을 정확한 byte-rate 숫자로 표시하지 않는다. 정확한 현재값, min/max/avg는 legend와 summary stat에서 제공한다.
+- 독립 trend 축도 순간 spike 하나 때문에 정상 구간이 일직선처럼 눌리면 안 된다. domain은 robust percentile 기반으로 잡고, 실제 min/max/current는 summary와 detail 값으로 보존한다.
+- trend 축의 목적은 절대 byte-rate 비교가 아니라 변화량을 읽는 것이다. 따라서 중앙 percentile 범위를 우선 사용하고, 최소 표시 span은 절대값 magnitude보다 실제 변화가 보이는 쪽을 우선한다.
+- trend 축은 latest/current sample을 반드시 domain 안에 포함하고 padding을 둔다. 최신 값이 percentile 밖에 있다는 이유로 chart 상단/하단에 붙어 일직선처럼 보여서는 안 된다.
+- Network/Disk trend chart는 raw `bytesPerSecond`를 저장하고 summary/detail에 그대로 표시하되, y좌표 렌더링에는 `log1p` 같은 단조 압축 변환을 적용할 수 있다. 이는 spike와 평상시 값이 함께 있을 때 선이 일직선처럼 눌리는 것을 막기 위한 표시 정책이다.
+- Network/Disk popover trend chart는 얇은 선만으로 변화가 읽히지 않으면 같은 y값으로 낮은 대비의 vertical fill을 함께 그린다. fill은 값을 새로 계산하지 않고 선과 동일한 raw metric 기반 display transform을 사용한다.
 - adaptive 축은 값의 변화가 작아도 일직선처럼 눌리지 않도록 최소 표시 범위를 보장한다.
 - adaptive 축은 순간 spike 하나가 전체 그래프를 평평하게 만들지 않도록 outlier에 덜 민감한 robust domain을 사용한다. 실제 min/max는 summary stat에 표시한다.
 - 값이 실제로 0 근처에 걸쳐 있는 경우에는 0을 하한으로 포함하지만, 모든 값이 0에서 멀리 떨어져 있으면 무조건 0에 고정하지 않는다.
