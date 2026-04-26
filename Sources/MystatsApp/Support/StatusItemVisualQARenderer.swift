@@ -22,6 +22,13 @@ enum StatusItemVisualQARenderer {
             statusItemsImage(history: history, snapshot: snapshot, settings: settings, showingSparkline: false),
             to: directory.appendingPathComponent("status-items-chart-off.png")
         )
+        try renderToggleStates(
+            history: history,
+            snapshot: snapshot,
+            baseSettings: settings,
+            to: directory
+        )
+        try writeToggleReport(to: directory.appendingPathComponent("menu-toggle-report.txt"))
 
         for item in MenuBarItem.allCases {
             try save(
@@ -47,14 +54,19 @@ enum StatusItemVisualQARenderer {
         let rowHeight: CGFloat = 38
         let labelWidth: CGFloat = 92
         let imageWidth: CGFloat = 280
-        let image = NSImage(size: NSSize(width: imageWidth, height: rowHeight * CGFloat(MenuBarItem.allCases.count)))
+        let visibleItems = settings.menuBarItems
+        let image = NSImage(size: NSSize(width: imageWidth, height: rowHeight * CGFloat(max(visibleItems.count, 1))))
         image.lockFocus()
         defer { image.unlockFocus() }
 
         NSColor.windowBackgroundColor.setFill()
         NSRect(origin: .zero, size: image.size).fill()
 
-        for (index, item) in MenuBarItem.allCases.enumerated() {
+        if visibleItems.isEmpty {
+            drawQALabel("No visible items", in: NSRect(x: 10, y: 12, width: 180, height: 14))
+        }
+
+        for (index, item) in visibleItems.enumerated() {
             var metricSettings = settings.settings(for: item)
             metricSettings.showsMenuBarSparkline = showingSparkline
             let display = MetricDisplayResolver.resolve(
@@ -71,6 +83,29 @@ enum StatusItemVisualQARenderer {
         }
 
         return image
+    }
+
+    private static func renderToggleStates(
+        history: [MetricSnapshot],
+        snapshot: MetricSnapshot,
+        baseSettings: AppSettings,
+        to directory: URL
+    ) throws {
+        for item in MenuBarItem.allCases {
+            var settings = baseSettings
+            settings.menuBarItems.removeAll { $0 == item }
+
+            try save(
+                statusItemsImage(history: history, snapshot: snapshot, settings: settings, showingSparkline: true),
+                to: directory.appendingPathComponent("status-items-without-\(item.rawValue).png")
+            )
+
+            settings.menuBarItems = [item]
+            try save(
+                statusItemsImage(history: history, snapshot: snapshot, settings: settings, showingSparkline: true),
+                to: directory.appendingPathComponent("status-items-only-\(item.rawValue).png")
+            )
+        }
     }
 
     private static func historyChartImage(
@@ -109,6 +144,39 @@ enum StatusItemVisualQARenderer {
             .foregroundColor: NSColor.secondaryLabelColor
         ]
         text.draw(in: rect, withAttributes: attributes)
+    }
+
+    private static func writeToggleReport(to url: URL) throws {
+        let suiteName = "mystats.visual-qa.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            throw CocoaError(.userCancelled)
+        }
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let store = SettingsStore(defaults: defaults)
+        store.settings.menuBarItems = MenuBarItem.allCases
+        var lines: [String] = ["menu item toggle QA"]
+
+        for item in MenuBarItem.allCases {
+            store.setMenuBarItem(item, enabled: false)
+            let disabled = !store.isMenuBarItemEnabled(item)
+            lines.append("disable \(item.rawValue): \(disabled ? "pass" : "fail") visible=\(store.settings.menuBarItems.map(\.rawValue).joined(separator: ","))")
+
+            store.setMenuBarItem(item, enabled: true)
+            let enabled = store.isMenuBarItemEnabled(item)
+            lines.append("enable \(item.rawValue): \(enabled ? "pass" : "fail") visible=\(store.settings.menuBarItems.map(\.rawValue).joined(separator: ","))")
+        }
+
+        for item in MenuBarItem.allCases {
+            store.settings.menuBarItems = [item]
+            store.setMenuBarItem(item, enabled: false)
+            let protected = store.isMenuBarItemEnabled(item)
+            lines.append("protect last \(item.rawValue): \(protected ? "pass" : "fail") visible=\(store.settings.menuBarItems.map(\.rawValue).joined(separator: ","))")
+        }
+
+        try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
     }
 
     private static func save(_ image: NSImage, to url: URL) throws {

@@ -1130,6 +1130,8 @@ UI:
 
 - 각 지표가 독립 메뉴바 항목으로 표시되는지 확인
 - manager window에서 항목 on/off가 즉시 반영되는지 확인
+- menu item visibility QA는 CPU/GPU/Temperature/Network/Disk를 각각 끈 상태와 다시 켠 상태를 모두 확인한다.
+- 마지막으로 남은 menu item은 끌 수 없고, 이 보호 동작은 QA에서 별도로 확인한다.
 - 메뉴바 값 변화 중 항목 폭이 변하지 않는지 확인
 - chart 표시 옵션 on/off 상태를 모두 캡처해 chart off 상태에서 메뉴바 항목 폭이 줄고, chart on 상태에서 각 지표의 sparkline이 표시되는지 확인
 - Network/Disk는 메뉴바와 popover visual QA에서 두 방향 선이 모두 보이는지 확인
