@@ -748,6 +748,7 @@ C32 G18 61°
 - metric status는 popover header, detail section, manager window에서만 표시한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
 - Network 메뉴바 항목은 download/upload 화살표 자체가 방향과 지표 종류를 나타내므로 별도 leading system icon을 표시하지 않는다.
+- Network 메뉴바 항목은 leading icon이 없고 값이 두 줄로 압축되므로 end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 132pt, chart off 56pt로 둔다.
 - 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.

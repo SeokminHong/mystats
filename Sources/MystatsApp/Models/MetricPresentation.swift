@@ -46,7 +46,7 @@ extension MenuBarItem {
             return MetricPresentation(
                 title: "Net",
                 symbolName: "arrow.up.arrow.down",
-                menuWidth: 142,
+                menuWidth: 132,
                 tint: .green,
                 showsMenuBarIcon: false,
                 menuSparklineWidth: 72
