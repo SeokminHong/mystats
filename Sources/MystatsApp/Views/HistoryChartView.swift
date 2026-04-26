@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HistoryChartView: View {
     let series: [MetricChartSeries]
+    let timeDomain: ClosedRange<Date>
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -22,11 +23,10 @@ struct HistoryChartView: View {
             let plotWidth = max(size.width - axisWidth, 1)
             let plotSize = CGSize(width: plotWidth, height: size.height)
             let allValues = series.flatMap(\.values).filter { $0.isFinite }
-            let allPoints = series.flatMap(\.points)
             guard
                 !allValues.isEmpty,
                 allValues.count > 1,
-                let timeRange = timeRange(for: allPoints)
+                timeDomain.lowerBound < timeDomain.upperBound
             else {
                 drawEmptyState(context: context, size: size)
                 return
@@ -43,7 +43,7 @@ struct HistoryChartView: View {
                     line,
                     context: context,
                     plotSize: plotSize,
-                    timeRange: timeRange,
+                    timeRange: timeDomain,
                     axis: axis,
                     valueRange: range
                 )
@@ -184,17 +184,6 @@ struct HistoryChartView: View {
             with: .color(tint.opacity(0.45)),
             style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round, dash: [3, 3])
         )
-    }
-
-    private func timeRange(for points: [MetricChartPoint]) -> ClosedRange<Date>? {
-        let timestamps = points
-            .filter { $0.value?.isFinite == true }
-            .map(\.timestamp)
-            .sorted()
-        guard let first = timestamps.first, let last = timestamps.last, first < last else {
-            return nil
-        }
-        return first...last
     }
 
     private func gapThreshold(for points: [MetricChartPoint]) -> TimeInterval {

@@ -32,7 +32,7 @@ struct MetricPopoverView: View {
 
                 timeWindowPicker
 
-                HistoryChartView(series: detail.series)
+                HistoryChartView(series: detail.series, timeDomain: detail.timeDomain)
 
                 summaryGrid(detail.stats)
 

@@ -649,6 +649,8 @@ chart gap policy:
 
 - chart series는 값 배열만이 아니라 timestamp와 optional value를 함께 가진 point 목록으로 표현한다.
 - 특정 timestamp에 값이 없으면 `0`으로 대체하지 않는다. 통계, 현재값, 축 계산에서도 missing value는 제외한다.
+- chart x축 domain은 값이 있는 point의 첫/마지막 시간이 아니라 사용자가 선택한 time window 전체로 고정한다.
+- 선택한 time window 안에서 측정값이 없는 앞/뒤 시간대는 축을 잘라내지 않고 빈 공간으로 남긴다.
 - sleep/wake, collector pause, 장기 window rollup 누락 등으로 정상 샘플 간격보다 큰 시간 간격이 생기면 그 구간을 연속 실선으로 연결하지 않는다.
 - 끊긴 구간은 gap으로 표현하며, 앞뒤 값이 모두 있는 경우에는 낮은 대비의 점선 connector로 표시할 수 있다.
 - chart의 x 위치는 배열 index가 아니라 timestamp range 기준으로 계산한다.

@@ -6,6 +6,7 @@ struct MetricHistoryDetail {
     let currentPrimary: String
     let currentSecondary: String?
     let windowLabel: String
+    let timeDomain: ClosedRange<Date>
     let sampleCount: Int
     let series: [MetricChartSeries]
     let stats: [MetricSummaryStat]
@@ -54,21 +55,29 @@ enum MetricHistoryResolver {
         history: [MetricSnapshot],
         settings: AppSettings
     ) -> MetricHistoryDetail {
+        let timeDomain = timeDomain(for: settings.chartTimeWindow, endingAt: snapshot.timestamp)
+        let windowLabel = windowLabel(settings.chartTimeWindow)
+
         switch item {
         case .cpu:
-            return cpu(snapshot: snapshot, history: history)
+            return cpu(snapshot: snapshot, history: history, windowLabel: windowLabel, timeDomain: timeDomain)
         case .gpu:
-            return gpu(snapshot: snapshot, history: history)
+            return gpu(snapshot: snapshot, history: history, windowLabel: windowLabel, timeDomain: timeDomain)
         case .temperature:
-            return temperature(snapshot: snapshot, history: history, settings: settings)
+            return temperature(snapshot: snapshot, history: history, settings: settings, windowLabel: windowLabel, timeDomain: timeDomain)
         case .network:
-            return network(snapshot: snapshot, history: history)
+            return network(snapshot: snapshot, history: history, windowLabel: windowLabel, timeDomain: timeDomain)
         case .disk:
-            return disk(snapshot: snapshot, history: history)
+            return disk(snapshot: snapshot, history: history, windowLabel: windowLabel, timeDomain: timeDomain)
         }
     }
 
-    private static func cpu(snapshot: MetricSnapshot, history: [MetricSnapshot]) -> MetricHistoryDetail {
+    private static func cpu(
+        snapshot: MetricSnapshot,
+        history: [MetricSnapshot],
+        windowLabel: String,
+        timeDomain: ClosedRange<Date>
+    ) -> MetricHistoryDetail {
         let values = history.compactMap { $0.cpu?.totalUsage }
         let cpu = snapshot.cpu
         let pAverage = cpu?.performanceCoreAverage.map(PercentFormatter.long) ?? "Unavailable"
@@ -77,7 +86,8 @@ enum MetricHistoryResolver {
         return MetricHistoryDetail(
             currentPrimary: cpu.map { PercentFormatter.long($0.totalUsage) } ?? "Unavailable",
             currentSecondary: "P \(pAverage)  E \(eAverage)",
-            windowLabel: windowLabel(history),
+            windowLabel: windowLabel,
+            timeDomain: timeDomain,
             sampleCount: values.count,
             series: [
                 MetricChartSeries(
@@ -99,7 +109,12 @@ enum MetricHistoryResolver {
         )
     }
 
-    private static func gpu(snapshot: MetricSnapshot, history: [MetricSnapshot]) -> MetricHistoryDetail {
+    private static func gpu(
+        snapshot: MetricSnapshot,
+        history: [MetricSnapshot],
+        windowLabel: String,
+        timeDomain: ClosedRange<Date>
+    ) -> MetricHistoryDetail {
         let values = history.compactMap { $0.gpu?.totalUsage }
         let gpu = snapshot.gpu
         let current = gpu?.totalUsage.map(PercentFormatter.long) ?? "Unsupported"
@@ -107,7 +122,8 @@ enum MetricHistoryResolver {
         return MetricHistoryDetail(
             currentPrimary: current,
             currentSecondary: gpu?.frequencyMHz.map { "\(Int($0.rounded())) MHz" },
-            windowLabel: windowLabel(history),
+            windowLabel: windowLabel,
+            timeDomain: timeDomain,
             sampleCount: values.count,
             series: [
                 MetricChartSeries(
@@ -130,7 +146,9 @@ enum MetricHistoryResolver {
     private static func temperature(
         snapshot: MetricSnapshot,
         history: [MetricSnapshot],
-        settings: AppSettings
+        settings: AppSettings,
+        windowLabel: String,
+        timeDomain: ClosedRange<Date>
     ) -> MetricHistoryDetail {
         let cpuValues = history.compactMap { $0.thermal?.cpuCelsius }
         let gpuValues = history.compactMap { $0.thermal?.gpuCelsius }
@@ -141,7 +159,8 @@ enum MetricHistoryResolver {
         return MetricHistoryDetail(
             currentPrimary: thermal?.cpuCelsius.map(formatter) ?? thermal?.thermalState.rawValue.capitalized ?? "Unavailable",
             currentSecondary: thermal.map { "Thermal \($0.thermalState.rawValue.capitalized)" },
-            windowLabel: windowLabel(history),
+            windowLabel: windowLabel,
+            timeDomain: timeDomain,
             sampleCount: max(cpuValues.count, max(gpuValues.count, socValues.count)),
             series: [
                 MetricChartSeries(id: "thermal-cpu", label: "CPU", points: points(history) { $0.thermal?.cpuCelsius }, tint: .orange, formattedCurrent: cpuValues.last.map(formatter) ?? "N/A", scale: thermalScale(settings)),
@@ -159,7 +178,12 @@ enum MetricHistoryResolver {
         )
     }
 
-    private static func network(snapshot: MetricSnapshot, history: [MetricSnapshot]) -> MetricHistoryDetail {
+    private static func network(
+        snapshot: MetricSnapshot,
+        history: [MetricSnapshot],
+        windowLabel: String,
+        timeDomain: ClosedRange<Date>
+    ) -> MetricHistoryDetail {
         let downloadValues = history.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
         let uploadValues = history.compactMap { $0.network?.uploadBytesPerSecond }.map(Double.init)
         let network = snapshot.network
@@ -167,7 +191,8 @@ enum MetricHistoryResolver {
         return MetricHistoryDetail(
             currentPrimary: network.map { "↓\(ByteRateFormatter.long($0.downloadBytesPerSecond))" } ?? "Unavailable",
             currentSecondary: network.map { "↑\(ByteRateFormatter.long($0.uploadBytesPerSecond))" },
-            windowLabel: windowLabel(history),
+            windowLabel: windowLabel,
+            timeDomain: timeDomain,
             sampleCount: max(downloadValues.count, uploadValues.count),
             series: [
                 MetricChartSeries(id: "network-down", label: "Download", points: points(history) { $0.network?.downloadBytesPerSecond }, tint: .green, formattedCurrent: downloadValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero),
@@ -182,7 +207,12 @@ enum MetricHistoryResolver {
         )
     }
 
-    private static func disk(snapshot: MetricSnapshot, history: [MetricSnapshot]) -> MetricHistoryDetail {
+    private static func disk(
+        snapshot: MetricSnapshot,
+        history: [MetricSnapshot],
+        windowLabel: String,
+        timeDomain: ClosedRange<Date>
+    ) -> MetricHistoryDetail {
         let readValues = history.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
         let writeValues = history.compactMap { $0.disk?.writeBytesPerSecond }.map(Double.init)
         let disk = snapshot.disk
@@ -190,7 +220,8 @@ enum MetricHistoryResolver {
         return MetricHistoryDetail(
             currentPrimary: disk.map { "R \(ByteRateFormatter.long($0.readBytesPerSecond))" } ?? "Unavailable",
             currentSecondary: disk.map { "W \(ByteRateFormatter.long($0.writeBytesPerSecond))" },
-            windowLabel: windowLabel(history),
+            windowLabel: windowLabel,
+            timeDomain: timeDomain,
             sampleCount: max(readValues.count, writeValues.count),
             series: [
                 MetricChartSeries(id: "disk-read", label: "Read", points: points(history) { $0.disk?.readBytesPerSecond }, tint: .teal, formattedCurrent: readValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero),
@@ -249,13 +280,26 @@ enum MetricHistoryResolver {
         ]
     }
 
-    private static func windowLabel(_ history: [MetricSnapshot]) -> String {
-        guard let first = history.first?.timestamp, let last = history.last?.timestamp else {
-            return "No history"
+    private static func timeDomain(for window: ChartTimeWindow, endingAt end: Date) -> ClosedRange<Date> {
+        switch window {
+        case .realtime:
+            return end.addingTimeInterval(-60)...end
+        case .day:
+            return end.addingTimeInterval(-24 * 60 * 60)...end
+        case .week:
+            return end.addingTimeInterval(-7 * 24 * 60 * 60)...end
         }
+    }
 
-        let seconds = max(Int(last.timeIntervalSince(first).rounded()), 0)
-        return seconds < 60 ? "Last \(seconds)s" : "Last \(seconds / 60)m \(seconds % 60)s"
+    private static func windowLabel(_ window: ChartTimeWindow) -> String {
+        switch window {
+        case .realtime:
+            return "Last 60s"
+        case .day:
+            return "Last 24h"
+        case .week:
+            return "Last 7d"
+        }
     }
 
     private static func busiestCoreLabel(_ cpu: CPUMetrics?) -> String {
