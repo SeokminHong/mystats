@@ -160,7 +160,7 @@ enum MetricHistoryResolver {
 
         return MetricHistoryDetail(
             currentPrimary: thermal?.cpuCelsius.map(formatter) ?? thermal?.thermalState.rawValue.capitalized ?? "Unavailable",
-            currentSecondary: thermal.map { "Thermal \($0.thermalState.rawValue.capitalized)" },
+            currentSecondary: nil,
             windowLabel: windowLabel,
             timeDomain: timeDomain,
             sampleCount: max(cpuValues.count, max(gpuValues.count, socValues.count)),

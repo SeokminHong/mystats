@@ -340,9 +340,11 @@ enum StatusItemImageRenderer {
         switch display.menuLayout {
         case .single(let primary, let secondary, let secondaryConfigurable):
             let primaryLine = "\(item.presentation.title) \(primary)"
-            drawText(primaryLine, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), size: 8.8, color: .labelColor, weight: .semibold)
             if secondaryConfigurable, itemSettings.showsSecondaryValue, let secondary {
+                drawText(primaryLine, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), size: 8.8, color: .labelColor, weight: .semibold)
                 drawText(secondary, in: NSRect(x: textX, y: 2, width: textWidth, height: 8), size: 7.5, color: .secondaryLabelColor, weight: .regular)
+            } else {
+                drawText(primaryLine, in: NSRect(x: textX, y: 5, width: textWidth, height: 10), size: 8.8, color: .labelColor, weight: .semibold)
             }
 
         case .paired(let first, let second):

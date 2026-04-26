@@ -49,24 +49,27 @@ struct MenuBarMetricLabelView: View {
     ) -> some View {
         switch display.menuLayout {
         case .single(let primary, let secondary, let secondaryConfigurable):
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 3) {
-                    Text(presentation.title)
-                        .foregroundStyle(.secondary)
-                    Text(primary)
-                        .foregroundStyle(.primary)
-                }
-                .font(.system(size: 9, weight: .semibold))
+            let showsSecondary = secondaryConfigurable && itemSettings.showsSecondaryValue && secondary != nil
 
-                if secondaryConfigurable, itemSettings.showsSecondaryValue, let secondary {
-                    Text(secondary)
-                        .font(.system(size: 7.5, weight: .regular))
-                        .foregroundStyle(.secondary)
+            if showsSecondary {
+                VStack(alignment: .leading, spacing: 1) {
+                    singlePrimaryRow(title: presentation.title, value: primary)
+
+                    if let secondary {
+                        Text(secondary)
+                            .font(.system(size: 7.5, weight: .regular))
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+            } else {
+                singlePrimaryRow(title: presentation.title, value: primary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
 
         case .paired(let first, let second):
             VStack(alignment: .leading, spacing: 1) {
@@ -77,6 +80,16 @@ struct MenuBarMetricLabelView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.86)
         }
+    }
+
+    private func singlePrimaryRow(title: String, value: String) -> some View {
+        HStack(spacing: 3) {
+            Text(title)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .foregroundStyle(.primary)
+        }
+        .font(.system(size: 9, weight: .semibold))
     }
 
     private func peerRow(_ value: MetricMenuPeerValue) -> some View {
