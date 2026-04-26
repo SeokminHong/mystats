@@ -9,6 +9,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var includeExternalDisks: Bool
     public var launchAtLogin: Bool
     public var temperatureUnit: TemperatureUnit
+    public var chartTimeWindow: ChartTimeWindow
 
     public init(
         menuBarItems: [MenuBarItem] = [.cpu, .gpu, .temperature, .network],
@@ -18,7 +19,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         includeVPNInterfaces: Bool = false,
         includeExternalDisks: Bool = false,
         launchAtLogin: Bool = false,
-        temperatureUnit: TemperatureUnit = .celsius
+        temperatureUnit: TemperatureUnit = .celsius,
+        chartTimeWindow: ChartTimeWindow = .realtime
     ) {
         self.menuBarItems = menuBarItems
         self.metricItemSettings = metricItemSettings
@@ -28,6 +30,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.includeExternalDisks = includeExternalDisks
         self.launchAtLogin = launchAtLogin
         self.temperatureUnit = temperatureUnit
+        self.chartTimeWindow = chartTimeWindow
     }
 
     public func settings(for item: MenuBarItem) -> MetricItemSettings {
@@ -47,6 +50,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case includeExternalDisks
         case launchAtLogin
         case temperatureUnit
+        case chartTimeWindow
     }
 
     public init(from decoder: Decoder) throws {
@@ -59,6 +63,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.includeExternalDisks = try container.decodeIfPresent(Bool.self, forKey: .includeExternalDisks) ?? false
         self.launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
         self.temperatureUnit = try container.decodeIfPresent(TemperatureUnit.self, forKey: .temperatureUnit) ?? .celsius
+        self.chartTimeWindow = try container.decodeIfPresent(ChartTimeWindow.self, forKey: .chartTimeWindow) ?? .realtime
     }
 }
 
@@ -101,6 +106,14 @@ public enum SamplingMode: String, CaseIterable, Codable, Equatable, Identifiable
 public enum TemperatureUnit: String, CaseIterable, Codable, Equatable, Identifiable, Sendable {
     case celsius
     case fahrenheit
+
+    public var id: String { rawValue }
+}
+
+public enum ChartTimeWindow: String, CaseIterable, Codable, Equatable, Identifiable, Sendable {
+    case realtime
+    case day
+    case week
 
     public var id: String { rawValue }
 }

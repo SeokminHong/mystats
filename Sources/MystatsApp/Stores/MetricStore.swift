@@ -7,6 +7,7 @@ final class MetricStore: ObservableObject {
     @Published private(set) var snapshot: MetricSnapshot
     @Published private(set) var history: RingBuffer<MetricSnapshot>
 
+    private var minuteArchive: [MetricSnapshot]
     private var previewTimer: Timer?
 
     init() {
@@ -15,6 +16,7 @@ final class MetricStore: ObservableObject {
         var initialHistory = RingBuffer<MetricSnapshot>(capacity: 300)
         initialHistory.append(initialSnapshot)
         self.history = initialHistory
+        self.minuteArchive = Self.seedMinuteArchive(endingAt: initialSnapshot.timestamp)
     }
 
     func startPreviewUpdates() {
@@ -32,9 +34,51 @@ final class MetricStore: ObservableObject {
     func apply(_ snapshot: MetricSnapshot) {
         self.snapshot = snapshot
         history.append(snapshot)
+        appendMinuteRollup(snapshot)
+    }
+
+    func history(for window: ChartTimeWindow) -> [MetricSnapshot] {
+        let now = snapshot.timestamp
+        switch window {
+        case .realtime:
+            return history.elements.filter { now.timeIntervalSince($0.timestamp) <= 60 }
+        case .day:
+            let cutoff = now.addingTimeInterval(-24 * 60 * 60)
+            return minuteArchive.filter { $0.timestamp >= cutoff } + history.elements.suffix(1)
+        case .week:
+            let cutoff = now.addingTimeInterval(-7 * 24 * 60 * 60)
+            return minuteArchive.filter { $0.timestamp >= cutoff } + history.elements.suffix(1)
+        }
     }
 
     deinit {
         previewTimer?.invalidate()
+    }
+
+    private func appendMinuteRollup(_ snapshot: MetricSnapshot) {
+        let minute = Self.minuteBucket(snapshot.timestamp)
+        if let last = minuteArchive.last, Self.minuteBucket(last.timestamp) == minute {
+            minuteArchive[minuteArchive.count - 1] = snapshot
+        } else {
+            minuteArchive.append(snapshot)
+        }
+
+        let cutoff = snapshot.timestamp.addingTimeInterval(-7 * 24 * 60 * 60)
+        if let firstValid = minuteArchive.firstIndex(where: { $0.timestamp >= cutoff }), firstValid > 0 {
+            minuteArchive.removeFirst(firstValid)
+        }
+    }
+
+    private static func seedMinuteArchive(endingAt date: Date) -> [MetricSnapshot] {
+        let end = minuteBucket(date)
+        let count = 7 * 24 * 60
+        return (0..<count).map { index in
+            let timestamp = Date(timeIntervalSince1970: TimeInterval(end - (count - index) * 60))
+            return PreviewMetricFactory.snapshot(at: timestamp)
+        }
+    }
+
+    private static func minuteBucket(_ date: Date) -> Int {
+        Int(date.timeIntervalSince1970 / 60)
     }
 }

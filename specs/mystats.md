@@ -622,12 +622,28 @@ VPN 트래픽:
 
 그래프는 최근 샘플만 보관한다.
 
-- 기본 표시 범위: 최근 60초
-- 확장 가능 범위: 최대 5분
+- 기본 표시 범위: 실시간, 최근 60초
+- 확장 표시 범위: 1일, 1주
 - 저장 위치: 메모리
 - 앱 재시작 후 그래프 히스토리 복원은 MVP에서 제외
 
 ring buffer는 값과 timestamp를 함께 저장한다. 샘플링 간격이 달라질 수 있으므로 배열 인덱스만으로 시간 간격을 추정하지 않는다.
+
+장기 window는 1초 raw sample을 모두 보관하지 않는다. 실시간 window는 짧은 raw ring buffer를 사용하고, 1일/1주 window는 분 단위 rollup snapshot을 사용한다. 이렇게 해야 1주 그래프를 제공하면서도 메뉴바 앱 자체의 메모리/CPU 비용을 통제할 수 있다.
+
+chart time window:
+
+- `Realtime`: 최근 60초 raw sample
+- `1 Day`: 최근 24시간 minute rollup
+- `1 Week`: 최근 7일 minute rollup
+
+chart scale:
+
+- CPU/GPU 사용률은 항상 0-100% 고정 축으로 표시한다.
+- 온도는 기본 0-110°C 고정 축으로 표시하되, Fahrenheit 표시 시 같은 물리 범위를 변환해서 표시한다.
+- network/disk byte rate는 현재 window의 최대값 기준 자동 축을 사용한다.
+- 자동 축 지표는 값이 모두 같을 때도 기준선이 중앙에서 사인파처럼 보이지 않도록 0을 하한으로 둔다.
+- preview/sample 데이터는 사인파 같은 주기 함수를 쓰지 않는다. 실제 collector가 들어오기 전에는 random walk와 occasional spike 형태의 deterministic preview를 사용한다.
 
 ## 18. 메뉴바 UI
 

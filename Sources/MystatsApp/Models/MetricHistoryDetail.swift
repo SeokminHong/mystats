@@ -18,6 +18,12 @@ struct MetricChartSeries: Identifiable {
     let values: [Double]
     let tint: Color
     let formattedCurrent: String
+    let scale: MetricChartScale
+}
+
+enum MetricChartScale {
+    case fixed(domain: ClosedRange<Double>, lowerLabel: String, upperLabel: String)
+    case automaticFloorZero
 }
 
 struct MetricSummaryStat: Identifiable {
@@ -70,7 +76,8 @@ enum MetricHistoryResolver {
                     label: "Total",
                     values: values,
                     tint: .blue,
-                    formattedCurrent: values.last.map(PercentFormatter.long) ?? "N/A"
+                    formattedCurrent: values.last.map(PercentFormatter.long) ?? "N/A",
+                    scale: .fixed(domain: 0...1, lowerLabel: "0%", upperLabel: "100%")
                 )
             ],
             stats: percentStats(values),
@@ -99,7 +106,8 @@ enum MetricHistoryResolver {
                     label: "Total",
                     values: values,
                     tint: .purple,
-                    formattedCurrent: current
+                    formattedCurrent: current,
+                    scale: .fixed(domain: 0...1, lowerLabel: "0%", upperLabel: "100%")
                 )
             ],
             stats: percentStats(values),
@@ -127,9 +135,9 @@ enum MetricHistoryResolver {
             windowLabel: windowLabel(history),
             sampleCount: max(cpuValues.count, max(gpuValues.count, socValues.count)),
             series: [
-                MetricChartSeries(id: "thermal-cpu", label: "CPU", values: cpuValues, tint: .orange, formattedCurrent: cpuValues.last.map(formatter) ?? "N/A"),
-                MetricChartSeries(id: "thermal-gpu", label: "GPU", values: gpuValues, tint: .pink, formattedCurrent: gpuValues.last.map(formatter) ?? "N/A"),
-                MetricChartSeries(id: "thermal-soc", label: "SoC", values: socValues, tint: .red, formattedCurrent: socValues.last.map(formatter) ?? "N/A")
+                MetricChartSeries(id: "thermal-cpu", label: "CPU", values: cpuValues, tint: .orange, formattedCurrent: cpuValues.last.map(formatter) ?? "N/A", scale: thermalScale(settings)),
+                MetricChartSeries(id: "thermal-gpu", label: "GPU", values: gpuValues, tint: .pink, formattedCurrent: gpuValues.last.map(formatter) ?? "N/A", scale: thermalScale(settings)),
+                MetricChartSeries(id: "thermal-soc", label: "SoC", values: socValues, tint: .red, formattedCurrent: socValues.last.map(formatter) ?? "N/A", scale: thermalScale(settings))
             ].filter { !$0.values.isEmpty },
             stats: numericStats(cpuValues, formatter: formatter),
             detailRows: [
@@ -153,8 +161,8 @@ enum MetricHistoryResolver {
             windowLabel: windowLabel(history),
             sampleCount: max(downloadValues.count, uploadValues.count),
             series: [
-                MetricChartSeries(id: "network-down", label: "Download", values: downloadValues, tint: .green, formattedCurrent: downloadValues.last.map(byteRate) ?? "N/A"),
-                MetricChartSeries(id: "network-up", label: "Upload", values: uploadValues, tint: .mint, formattedCurrent: uploadValues.last.map(byteRate) ?? "N/A")
+                MetricChartSeries(id: "network-down", label: "Download", values: downloadValues, tint: .green, formattedCurrent: downloadValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero),
+                MetricChartSeries(id: "network-up", label: "Upload", values: uploadValues, tint: .mint, formattedCurrent: uploadValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero)
             ],
             stats: byteRateStats(downloadValues),
             detailRows: [
@@ -176,8 +184,8 @@ enum MetricHistoryResolver {
             windowLabel: windowLabel(history),
             sampleCount: max(readValues.count, writeValues.count),
             series: [
-                MetricChartSeries(id: "disk-read", label: "Read", values: readValues, tint: .teal, formattedCurrent: readValues.last.map(byteRate) ?? "N/A"),
-                MetricChartSeries(id: "disk-write", label: "Write", values: writeValues, tint: .cyan, formattedCurrent: writeValues.last.map(byteRate) ?? "N/A")
+                MetricChartSeries(id: "disk-read", label: "Read", values: readValues, tint: .teal, formattedCurrent: readValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero),
+                MetricChartSeries(id: "disk-write", label: "Write", values: writeValues, tint: .cyan, formattedCurrent: writeValues.last.map(byteRate) ?? "N/A", scale: .automaticFloorZero)
             ],
             stats: byteRateStats(readValues),
             detailRows: [
@@ -243,5 +251,13 @@ enum MetricHistoryResolver {
     private static func byteRate(_ value: Double) -> String {
         ByteRateFormatter.long(UInt64(max(value, 0)))
     }
-}
 
+    private static func thermalScale(_ settings: AppSettings) -> MetricChartScale {
+        switch settings.temperatureUnit {
+        case .celsius:
+            return .fixed(domain: 0...110, lowerLabel: "0°C", upperLabel: "110°C")
+        case .fahrenheit:
+            return .fixed(domain: 0...110, lowerLabel: "32°F", upperLabel: "230°F")
+        }
+    }
+}

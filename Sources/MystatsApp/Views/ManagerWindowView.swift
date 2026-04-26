@@ -71,6 +71,13 @@ private struct GeneralSettingsTab: View {
                     }
                 }
                 .pickerStyle(.segmented)
+
+                Picker("Default chart window", selection: $settingsStore.settings.chartTimeWindow) {
+                    Text("Realtime").tag(ChartTimeWindow.realtime)
+                    Text("1 Day").tag(ChartTimeWindow.day)
+                    Text("1 Week").tag(ChartTimeWindow.week)
+                }
+                .pickerStyle(.segmented)
             }
 
             Section("Collectors") {

@@ -8,17 +8,18 @@ struct MetricPopoverView: View {
     @EnvironmentObject private var settingsStore: SettingsStore
 
     var body: some View {
+        let selectedHistory = metricStore.history(for: settingsStore.settings.chartTimeWindow)
         let presentation = item.presentation
         let display = MetricDisplayResolver.resolve(
             item: item,
             snapshot: metricStore.snapshot,
-            history: metricStore.history.elements,
+            history: selectedHistory,
             settings: settingsStore.settings
         )
         let detail = MetricHistoryResolver.resolve(
             item: item,
             snapshot: metricStore.snapshot,
-            history: metricStore.history.elements,
+            history: selectedHistory,
             settings: settingsStore.settings
         )
         let itemSettings = settingsStore.settings.settings(for: item)
@@ -28,6 +29,8 @@ struct MetricPopoverView: View {
                 header(presentation: presentation, display: display)
 
                 currentValue(detail)
+
+                timeWindowPicker
 
                 HistoryChartView(series: detail.series)
 
@@ -41,6 +44,15 @@ struct MetricPopoverView: View {
             }
             .padding(16)
         }
+    }
+
+    private var timeWindowPicker: some View {
+        Picker("Time Window", selection: $settingsStore.settings.chartTimeWindow) {
+            Text("Realtime").tag(ChartTimeWindow.realtime)
+            Text("1 Day").tag(ChartTimeWindow.day)
+            Text("1 Week").tag(ChartTimeWindow.week)
+        }
+        .pickerStyle(.segmented)
     }
 
     private func header(presentation: MetricPresentation, display: MetricDisplaySnapshot) -> some View {

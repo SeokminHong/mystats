@@ -11,6 +11,7 @@ import Testing
     #expect(settings.includeVPNInterfaces == false)
     #expect(settings.includeExternalDisks == false)
     #expect(settings.temperatureUnit == .celsius)
+    #expect(settings.chartTimeWindow == .realtime)
     #expect(settings.settings(for: .cpu).showsSecondaryValue)
     #expect(settings.settings(for: .cpu).showsMenuBarSparkline)
     #expect(settings.settings(for: .cpu).showsPopoverDetails)
@@ -33,4 +34,5 @@ import Testing
 
     #expect(settings.menuBarItems == [MenuBarItem.cpu, MenuBarItem.network])
     #expect(settings.settings(for: MenuBarItem.network) == MetricItemSettings.default)
+    #expect(settings.chartTimeWindow == .realtime)
 }

@@ -18,24 +18,29 @@ struct HistoryChartView: View {
 
     private var chart: some View {
         Canvas { context, size in
+            let plotWidth = max(size.width - 42, 1)
+            let plotSize = CGSize(width: plotWidth, height: size.height)
             let allValues = series.flatMap(\.values).filter { $0.isFinite }
-            guard let minValue = allValues.min(), let maxValue = allValues.max(), allValues.count > 1 else {
+            guard !allValues.isEmpty, allValues.count > 1 else {
                 drawEmptyState(context: context, size: size)
                 return
             }
 
-            drawGrid(context: context, size: size)
+            let axis = axisDomain(for: allValues)
+            drawGrid(context: context, size: plotSize)
+            drawAxisLabels(context: context, size: size, axis: axis)
 
-            let range = maxValue - minValue
+            let range = max(axis.max - axis.min, 0.0001)
             for line in series where line.values.count > 1 {
-                let xStep = size.width / CGFloat(line.values.count - 1)
+                let xStep = plotSize.width / CGFloat(line.values.count - 1)
                 var path = Path()
 
                 for (index, value) in line.values.enumerated() {
-                    let normalized = range == 0 ? 0.5 : (value - minValue) / range
+                    let clamped = min(max(value, axis.min), axis.max)
+                    let normalized = (clamped - axis.min) / range
                     let point = CGPoint(
                         x: CGFloat(index) * xStep,
-                        y: size.height - CGFloat(normalized) * size.height
+                        y: plotSize.height - CGFloat(normalized) * plotSize.height
                     )
 
                     if index == 0 {
@@ -69,7 +74,7 @@ struct HistoryChartView: View {
 
     private func drawGrid(context: GraphicsContext, size: CGSize) {
         let gridColor = Color.secondary.opacity(0.18)
-        for index in 1...3 {
+        for index in 0...4 {
             let y = size.height * CGFloat(index) / 4
             var path = Path()
             path.move(to: CGPoint(x: 0, y: y))
@@ -84,4 +89,74 @@ struct HistoryChartView: View {
         path.addLine(to: CGPoint(x: size.width, y: size.height / 2))
         context.stroke(path, with: .color(.secondary.opacity(0.3)), lineWidth: 1)
     }
+
+    private func drawAxisLabels(context: GraphicsContext, size: CGSize, axis: ChartAxis) {
+        let x = size.width - 18
+        context.draw(
+            Text(axis.upperLabel)
+                .font(.caption2)
+                .foregroundColor(.secondary),
+            at: CGPoint(x: x, y: 6),
+            anchor: .center
+        )
+        context.draw(
+            Text(axis.lowerLabel)
+                .font(.caption2)
+                .foregroundColor(.secondary),
+            at: CGPoint(x: x, y: size.height - 7),
+            anchor: .center
+        )
+    }
+
+    private func axisDomain(for values: [Double]) -> ChartAxis {
+        if case let .fixed(domain, lowerLabel, upperLabel)? = fixedScale {
+            return ChartAxis(min: domain.lowerBound, max: domain.upperBound, lowerLabel: lowerLabel, upperLabel: upperLabel)
+        }
+
+        let maxValue = max(values.max() ?? 0, 1)
+        return ChartAxis(
+            min: 0,
+            max: maxValue,
+            lowerLabel: "0",
+            upperLabel: abbreviated(maxValue)
+        )
+    }
+
+    private var fixedScale: MetricChartScale? {
+        guard let first = series.first?.scale else {
+            return nil
+        }
+
+        switch first {
+        case .fixed:
+            return series.allSatisfy {
+                if case .fixed = $0.scale {
+                    return true
+                }
+                return false
+            } ? first : nil
+        case .automaticFloorZero:
+            return nil
+        }
+    }
+
+    private func abbreviated(_ value: Double) -> String {
+        if value >= 1_000_000_000 {
+            return "\(Int((value / 1_000_000_000).rounded()))G"
+        }
+        if value >= 1_000_000 {
+            return "\(Int((value / 1_000_000).rounded()))M"
+        }
+        if value >= 1_000 {
+            return "\(Int((value / 1_000).rounded()))K"
+        }
+        return "\(Int(value.rounded()))"
+    }
+}
+
+private struct ChartAxis {
+    let min: Double
+    let max: Double
+    let lowerLabel: String
+    let upperLabel: String
 }
