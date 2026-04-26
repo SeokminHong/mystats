@@ -748,7 +748,8 @@ C32 G18 61°
 - metric status는 popover header, detail section, manager window에서만 표시한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
 - Network 메뉴바 항목은 download/upload 화살표 자체가 방향과 지표 종류를 나타내므로 별도 leading system icon을 표시하지 않는다.
-- Network 메뉴바 항목은 leading icon이 없고 값이 두 줄로 압축되므로 end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 132pt, chart off 56pt로 둔다.
+- Network 메뉴바 항목은 leading icon이 없고 값이 두 줄로 압축되므로 end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 116pt, chart off 56pt, chart 56pt로 둔다.
+- Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, end 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 138pt, chart off 82pt, chart 52pt로 둔다.
 - 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.
@@ -758,7 +759,7 @@ C32 G18 61°
 - Disk 메뉴바 sparkline은 read와 write를 두 개의 선으로 렌더링한다.
 - 다중선 sparkline은 같은 단색 계열을 유지하고, 두 번째 선은 투명도 또는 dash로 구분한다.
 - metric별 설정에서 menu bar chart 표시 여부를 켜고 끌 수 있다.
-- Network/Disk처럼 다중선 메뉴바 chart가 있는 항목은 단일선 지표보다 넓은 chart 영역을 확보한다. 이 폭은 빈 여백이 아니라 실제 plot 영역이어야 한다.
+- Network/Disk처럼 다중선 메뉴바 chart가 있는 항목은 단일선 지표보다 넓은 chart 영역을 확보하되, 메뉴바에서 텍스트보다 chart가 과도하게 커 보이면 안 된다. 이 폭은 빈 여백이 아니라 실제 plot 영역이어야 한다.
 - 값이 `unsupported` 또는 `unavailable`인 항목은 메뉴바에서 숨길 수 있다.
 - 사용자가 settings window의 metric tab에서 메뉴바 표시 항목을 선택할 수 있다.
 - 네트워크와 디스크 단위는 읽기 쉬운 단위로 자동 축약한다.
