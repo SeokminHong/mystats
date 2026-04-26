@@ -16,51 +16,120 @@ struct MetricPopoverView: View {
             history: metricStore.history.elements,
             settings: settingsStore.settings
         )
+        let detail = MetricHistoryResolver.resolve(
+            item: item,
+            snapshot: metricStore.snapshot,
+            history: metricStore.history.elements,
+            settings: settingsStore.settings
+        )
 
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                Image(systemName: presentation.symbolName)
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(presentation.tint)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                header(presentation: presentation, display: display)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(presentation.title)
-                        .font(.headline)
-                    Text(statusLabel(display.status))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                currentValue(detail)
 
-                Spacer()
+                HistoryChartView(series: detail.series)
 
-                Button {
-                    openWindow(id: "manager")
-                } label: {
-                    Label("Manage", systemImage: "slider.horizontal.3")
-                }
-                .buttonStyle(.bordered)
+                summaryGrid(detail.stats)
+
+                detailRows(detail.detailRows)
+
+                metricDetail
             }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(display.primaryValue)
-                    .font(.system(size: 32, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                if let secondary = display.secondaryValue {
-                    Text(secondary)
-                        .font(.title3)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            SparklineChartView(values: display.chartValues, tint: presentation.tint)
-                .frame(height: 54)
-                .padding(10)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-
-            metricDetail
+            .padding(16)
         }
-        .padding(16)
+    }
+
+    private func header(presentation: MetricPresentation, display: MetricDisplaySnapshot) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: presentation.symbolName)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(presentation.tint)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(presentation.title)
+                    .font(.headline)
+                Text(statusLabel(display.status))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                openWindow(id: "manager")
+            } label: {
+                Label("Manage", systemImage: "slider.horizontal.3")
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private func currentValue(_ detail: MetricHistoryDetail) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(detail.currentPrimary)
+                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                    if let secondary = detail.currentSecondary {
+                        Text(secondary)
+                            .font(.subheadline)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(detail.windowLabel)
+                    Text("\(detail.sampleCount) samples")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+            }
+        }
+    }
+
+    private func summaryGrid(_ stats: [MetricSummaryStat]) -> some View {
+        Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+            GridRow {
+                ForEach(stats.prefix(4)) { stat in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(stat.label)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(stat.value)
+                            .font(.subheadline.weight(.medium))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 7))
+                }
+            }
+        }
+    }
+
+    private func detailRows(_ rows: [MetricDetailRow]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Details")
+                .font(.headline)
+            ForEach(rows) { row in
+                HStack {
+                    Text(row.label)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(row.value)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                .font(.subheadline)
+            }
+        }
     }
 
     @ViewBuilder
@@ -102,4 +171,3 @@ struct MetricPopoverView: View {
         }
     }
 }
-

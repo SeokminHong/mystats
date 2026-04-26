@@ -674,6 +674,19 @@ C32 G18 61°
 
 팝오버는 선택한 메뉴바 지표의 현재 snapshot과 최근 그래프를 우선 표시한다. 필요한 경우 다른 지표 요약으로 이동할 수 있지만, MVP에서는 클릭한 지표의 detail popover를 기본으로 한다.
 
+메뉴 항목 클릭 인터랙션:
+
+- 사용자가 CPU/GPU/Temperature/Network/Disk 메뉴바 항목을 클릭하면 해당 지표 전용 popover를 연다.
+- popover는 열려 있는 동안 ring buffer의 최신 sample을 계속 반영한다.
+- popover는 클릭한 지표의 히스토리만 우선 표시하고, 다른 지표의 전체 대시보드로 전환하지 않는다.
+- popover 상단에는 지표 icon, 지표명, collector status, manager window 버튼을 둔다.
+- popover 본문에는 현재값, 최근 측정 기간, sample 수, live chart, min/max/avg 요약, 지표별 세부 정보를 둔다.
+- chart는 ring buffer timestamp 기준 최근 데이터를 사용하며, 샘플 간격이 변해도 배열 인덱스만으로 시간을 설명하지 않는다.
+- network와 disk처럼 방향이 둘인 지표는 download/upload 또는 read/write를 같은 chart 안에 별도 series로 표시한다.
+- CPU는 total usage를 주 series로 표시하고 P-core/E-core 평균은 세부 정보와 현재 코어 목록으로 표시한다.
+- Temperature는 CPU/GPU/SoC 온도를 별도 series로 표시하되, 불확실하거나 없는 값은 표시하지 않는다.
+- 값이 `Unsupported` 또는 `Unavailable`이면 chart 영역은 비어 있음을 명시하고 마지막 상태와 사유를 보여준다.
+
 기본 구성:
 
 ```text
@@ -712,7 +725,7 @@ Upload         1.8 MB/s
 - `Unsupported`와 `Unavailable`을 구분한다.
 - 설정으로 숨긴 항목은 섹션 전체를 숨긴다.
 - 지표별 collector 상태를 사용자가 이해할 수 있는 수준으로 표시한다.
-- 각 detail popover는 icon, 현재값, status badge, sparkline chart를 포함한다.
+- 각 detail popover는 icon, 현재값, status badge, live chart, min/max/avg 요약, 세부 정보 row를 포함한다.
 - manager window로 이동하는 버튼을 제공한다.
 
 ## 20. Manager Window

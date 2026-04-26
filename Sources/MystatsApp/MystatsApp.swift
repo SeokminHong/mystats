@@ -59,7 +59,8 @@ struct MystatsApp: App {
             MetricPopoverView(item: item)
                 .environmentObject(metricStore)
                 .environmentObject(settingsStore)
-                .frame(width: 360)
+                .frame(width: 440)
+                .frame(maxHeight: 620)
                 .onAppear {
                     metricStore.startPreviewUpdates()
                 }
