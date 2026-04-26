@@ -8,6 +8,18 @@ struct MetricPopoverView: View {
     @EnvironmentObject private var settingsStore: SettingsStore
 
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            content
+                .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                content
+            }
+        }
+        .frame(width: MetricPopoverLayout.width)
+        .frame(minHeight: MetricPopoverLayout.minHeight, maxHeight: MetricPopoverLayout.maxHeight)
+    }
+
+    private var content: some View {
         let selectedHistory = metricStore.history(for: settingsStore.settings.chartTimeWindow)
         let presentation = item.presentation
         let display = MetricDisplayResolver.resolve(
@@ -24,26 +36,24 @@ struct MetricPopoverView: View {
         )
         let itemSettings = settingsStore.settings.settings(for: item)
 
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                header(presentation: presentation, display: display)
+        return VStack(alignment: .leading, spacing: 10) {
+            header(presentation: presentation, display: display)
 
-                currentValue(detail)
+            currentValue(detail)
 
-                timeWindowPicker
+            timeWindowPicker
 
-                HistoryChartView(series: detail.series, timeDomain: detail.timeDomain)
+            HistoryChartView(series: detail.series, timeDomain: detail.timeDomain)
 
-                summaryGrid(detail.stats)
+            summaryGrid(detail.stats)
 
-                detailRows(detail.detailRows)
+            detailRows(detail.detailRows)
 
-                if itemSettings.showsPopoverDetails {
-                    metricDetail
-                }
+            if itemSettings.showsPopoverDetails {
+                metricDetail
             }
-            .padding(12)
         }
+        .padding(12)
     }
 
     private var timeWindowPicker: some View {

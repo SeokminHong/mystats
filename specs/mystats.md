@@ -773,6 +773,8 @@ C32 G18 61°
 - popover는 클릭한 지표의 히스토리만 우선 표시하고, 다른 지표의 전체 대시보드로 전환하지 않는다.
 - popover 상단에는 지표 icon, 지표명, collector status, manager window 버튼을 둔다.
 - popover 본문에는 현재값, 최근 측정 기간, sample 수, live chart, min/max/avg 요약, 지표별 세부 정보를 둔다.
+- popover는 고정 높이를 강제하지 않는다. content fitting height가 최대 높이보다 작으면 내용 높이까지 줄어들고, 최대 높이를 넘으면 최대 높이에서 내부 스크롤한다.
+- popover 기본 폭은 460pt, 최소 높이는 280pt, 최대 높이는 620pt로 제한한다.
 - chart는 ring buffer timestamp 기준 최근 데이터를 사용하며, 샘플 간격이 변해도 배열 인덱스만으로 시간을 설명하지 않는다.
 - chart 영역은 padding을 작게 유지하고 축 label은 오른쪽 좁은 gutter 안에 배치한다.
 - chart 좌우 padding은 최소화한다. CPU, Network, Disk처럼 사용자가 추이를 빠르게 읽어야 하는 지표에서 plot 영역보다 padding/gutter가 두드러져 보이면 안 된다.
@@ -1135,6 +1137,7 @@ UI:
 - 메뉴바 값 변화 중 항목 폭이 변하지 않는지 확인
 - chart 표시 옵션 on/off 상태를 모두 캡처해 chart off 상태에서 메뉴바 항목 폭이 줄고, chart on 상태에서 각 지표의 sparkline이 표시되는지 확인
 - Network/Disk는 메뉴바와 popover visual QA에서 두 방향 선이 모두 보이는지 확인
+- popover visual QA는 각 metric의 fitting height가 최대 높이를 넘지 않는지, 내용이 적은 metric이 최대 높이로 고정되지 않는지 확인한다.
 - popover의 chart가 ring buffer와 함께 갱신되는지 확인
 - manager/settings window를 열었을 때 앱 CPU가 idle에 가깝게 안정되는지 확인
 - manager/settings window의 종료 버튼이 앱 프로세스를 종료하는지 확인

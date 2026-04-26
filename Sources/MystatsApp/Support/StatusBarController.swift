@@ -133,15 +133,14 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         let popover = NSPopover()
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 460, height: 620)
         popover.delegate = self
-        popover.contentViewController = PopoverHostingController(
+        let controller = PopoverHostingController(
             rootView: MetricPopoverView(item: item)
                 .environmentObject(metricStore)
                 .environmentObject(settingsStore)
-                .frame(width: 460)
-                .frame(maxHeight: 620)
         )
+        popover.contentViewController = controller
+        popover.contentSize = controller.preferredPopoverSize()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
         activePopover = popover
@@ -266,7 +265,25 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 }
 
-private final class PopoverHostingController<Content: View>: NSHostingController<Content> {
+final class PopoverHostingController<Content: View>: NSHostingController<Content> {
+    func preferredPopoverSize() -> NSSize {
+        view.frame = NSRect(
+            x: 0,
+            y: 0,
+            width: MetricPopoverLayout.width,
+            height: MetricPopoverLayout.maxHeight
+        )
+        view.layoutSubtreeIfNeeded()
+
+        let fittingHeight = view.fittingSize.height
+        let height = min(
+            max(fittingHeight, MetricPopoverLayout.minHeight),
+            MetricPopoverLayout.maxHeight
+        )
+        preferredContentSize = NSSize(width: MetricPopoverLayout.width, height: height)
+        return preferredContentSize
+    }
+
     override func viewDidAppear() {
         super.viewDidAppear()
         view.window?.makeKey()

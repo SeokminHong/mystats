@@ -29,6 +29,7 @@ enum StatusItemVisualQARenderer {
             to: directory
         )
         try writeToggleReport(to: directory.appendingPathComponent("menu-toggle-report.txt"))
+        try writePopoverSizeReport(to: directory.appendingPathComponent("popover-size-report.txt"))
 
         for item in MenuBarItem.allCases {
             try save(
@@ -177,6 +178,33 @@ enum StatusItemVisualQARenderer {
         }
 
         try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private static func writePopoverSizeReport(to url: URL) throws {
+        let suiteName = "mystats.popover-visual-qa.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            throw CocoaError(.userCancelled)
+        }
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let metricStore = MetricStore()
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.settings.menuBarItems = MenuBarItem.allCases
+
+        let lines = MenuBarItem.allCases.map { item in
+            let controller = PopoverHostingController(
+                rootView: MetricPopoverView(item: item)
+                    .environmentObject(metricStore)
+                    .environmentObject(settingsStore)
+            )
+            let size = controller.preferredPopoverSize()
+            let heightState = size.height < MetricPopoverLayout.maxHeight ? "shrunk" : "max"
+            return "\(item.rawValue): width=\(Int(size.width)) height=\(Int(size.height)) \(heightState)"
+        }
+
+        try (["popover size QA"] + lines).joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
     }
 
     private static func save(_ image: NSImage, to url: URL) throws {
