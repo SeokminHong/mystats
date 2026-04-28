@@ -18,7 +18,9 @@ struct MenuBarMetricLabelView: View {
         let itemSettings = settings.settings(for: item)
         let menuWidth = presentation.menuWidth(showingSparkline: itemSettings.showsMenuBarSparkline)
 
-        HStack(spacing: 4) {
+        let iconTextSpacing: CGFloat = display.menuLayout.isPaired ? 1 : 4
+
+        HStack(spacing: iconTextSpacing) {
             if presentation.showsMenuBarIcon {
                 Image(systemName: presentation.symbolName)
                     .symbolRenderingMode(.monochrome)
@@ -79,7 +81,7 @@ struct MenuBarMetricLabelView: View {
             }
             .frame(
                 width: peerTextWidth(presentation: presentation, itemSettings: itemSettings),
-                alignment: itemSettings.showsMenuBarSparkline ? .trailing : .leading
+                alignment: .leading
             )
             .monospacedDigit()
             .lineLimit(1)
@@ -101,7 +103,6 @@ struct MenuBarMetricLabelView: View {
         HStack(spacing: 3) {
             Text(value.label)
                 .foregroundStyle(.secondary)
-                .frame(width: 9, alignment: .center)
             Text(value.value)
                 .foregroundStyle(.primary)
         }
@@ -113,7 +114,7 @@ struct MenuBarMetricLabelView: View {
         itemSettings: MetricItemSettings
     ) -> CGFloat {
         let iconWidth: CGFloat = presentation.showsMenuBarIcon ? 12 : 0
-        let iconGap: CGFloat = presentation.showsMenuBarIcon ? 4 : 0
+        let iconGap: CGFloat = presentation.showsMenuBarIcon ? 1 : 0
         let sparklineWidth: CGFloat = itemSettings.showsMenuBarSparkline ? presentation.menuSparklineWidth : 0
         let sparklineGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
         return max(

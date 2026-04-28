@@ -20,6 +20,13 @@ enum MetricMenuLayout {
     case single(primary: String, secondary: String?, secondaryConfigurable: Bool)
     case paired(first: MetricMenuPeerValue, second: MetricMenuPeerValue)
 
+    var isPaired: Bool {
+        if case .paired = self {
+            return true
+        }
+        return false
+    }
+
     var hasConfigurableSecondaryValue: Bool {
         switch self {
         case .single(_, let secondary, let secondaryConfigurable):

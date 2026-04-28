@@ -352,7 +352,8 @@ enum StatusItemImageRenderer {
 
         let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
         let chartGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
-        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 14 : 1
+        let iconTextGap: CGFloat = display.menuLayout.isPaired ? 1 : 2
+        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 12 + iconTextGap : 1
         let textWidth = width - textX - chartWidth - chartGap
         let alignsTextTowardChart = itemSettings.showsMenuBarSparkline
 
@@ -384,8 +385,8 @@ enum StatusItemImageRenderer {
         case .paired(let first, let second):
             let firstRect = NSRect(x: textX, y: 10, width: textWidth, height: 9)
             let secondRect = NSRect(x: textX, y: 2, width: textWidth, height: 9)
-            drawPeerValue(first, in: firstRect, alignsTowardChart: alignsTextTowardChart)
-            drawPeerValue(second, in: secondRect, alignsTowardChart: alignsTextTowardChart)
+            drawPeerValue(first, in: firstRect, alignsTowardChart: false)
+            drawPeerValue(second, in: secondRect, alignsTowardChart: false)
         }
 
         if itemSettings.showsMenuBarSparkline {
