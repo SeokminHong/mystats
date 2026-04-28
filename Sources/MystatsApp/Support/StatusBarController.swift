@@ -352,7 +352,7 @@ enum StatusItemImageRenderer {
 
         let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
         let chartGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
-        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 14 : 1
+        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 13 : 1
         let textWidth = width - textX - chartWidth - chartGap
         let alignsTextTowardChart = itemSettings.showsMenuBarSparkline
 
@@ -434,7 +434,7 @@ enum StatusItemImageRenderer {
         in rect: NSRect,
         alignsTowardChart: Bool
     ) {
-        let labelWidth = ceil(textWidth(value.label, size: 8.4, weight: .semibold))
+        let labelWidth = peerLabelColumnWidth
         let gap: CGFloat = 3
         let availableValueWidth = max(rect.width - labelWidth - gap, 1)
         let valueWidth = min(peerValueColumnWidth, availableValueWidth)
@@ -446,7 +446,11 @@ enum StatusItemImageRenderer {
     }
 
     private static var peerValueColumnWidth: CGFloat {
-        38
+        37
+    }
+
+    private static var peerLabelColumnWidth: CGFloat {
+        9
     }
 
     private static var templatePrimaryColor: NSColor {

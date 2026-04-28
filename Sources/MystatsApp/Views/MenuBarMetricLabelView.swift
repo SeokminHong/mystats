@@ -103,6 +103,7 @@ struct MenuBarMetricLabelView: View {
         HStack(spacing: 3) {
             Text(value.label)
                 .foregroundStyle(.secondary)
+                .frame(width: peerLabelColumnWidth, alignment: .leading)
             Text(value.value)
                 .foregroundStyle(.primary)
                 .frame(width: peerValueColumnWidth, alignment: .trailing)
@@ -115,7 +116,7 @@ struct MenuBarMetricLabelView: View {
         itemSettings: MetricItemSettings
     ) -> CGFloat {
         let iconWidth: CGFloat = presentation.showsMenuBarIcon ? 12 : 0
-        let iconGap: CGFloat = presentation.showsMenuBarIcon ? 2 : 0
+        let iconGap: CGFloat = presentation.showsMenuBarIcon ? 1 : 0
         let sparklineWidth: CGFloat = itemSettings.showsMenuBarSparkline ? presentation.menuSparklineWidth : 0
         let sparklineGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
         return max(
@@ -129,6 +130,10 @@ struct MenuBarMetricLabelView: View {
     }
 
     private var peerValueColumnWidth: CGFloat {
-        38
+        37
+    }
+
+    private var peerLabelColumnWidth: CGFloat {
+        9
     }
 }
