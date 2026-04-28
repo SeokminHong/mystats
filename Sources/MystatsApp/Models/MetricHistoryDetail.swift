@@ -68,9 +68,9 @@ enum MetricHistoryResolver {
 
         switch item {
         case .cpu:
-            return cpu(snapshot: snapshot, history: history, windowLabel: windowLabel, timeDomain: timeDomain)
+            return cpu(snapshot: snapshot, history: history, settings: settings, windowLabel: windowLabel, timeDomain: timeDomain)
         case .gpu:
-            return gpu(snapshot: snapshot, history: history, windowLabel: windowLabel, timeDomain: timeDomain)
+            return gpu(snapshot: snapshot, history: history, settings: settings, windowLabel: windowLabel, timeDomain: timeDomain)
         case .temperature:
             return temperature(snapshot: snapshot, history: history, settings: settings, windowLabel: windowLabel, timeDomain: timeDomain)
         case .network:
@@ -83,17 +83,20 @@ enum MetricHistoryResolver {
     private static func cpu(
         snapshot: MetricSnapshot,
         history: [MetricSnapshot],
+        settings: AppSettings,
         windowLabel: String,
         timeDomain: ClosedRange<Date>
     ) -> MetricHistoryDetail {
         let values = history.compactMap { $0.cpu?.totalUsage }
         let cpu = snapshot.cpu
+        let thermal = snapshot.thermal
         let pAverage = cpu?.performanceCoreAverage.map(PercentFormatter.long) ?? "Unavailable"
         let eAverage = cpu?.efficiencyCoreAverage.map(PercentFormatter.long) ?? "Unavailable"
+        let temperature = formattedTemperature(thermal?.cpuCelsius, settings: settings)
 
         return MetricHistoryDetail(
             currentPrimary: cpu.map { PercentFormatter.long($0.totalUsage) } ?? "Unavailable",
-            currentSecondary: "P \(pAverage)  E \(eAverage)",
+            currentSecondary: temperature,
             windowLabel: windowLabel,
             timeDomain: timeDomain,
             sampleCount: values.count,
@@ -109,10 +112,13 @@ enum MetricHistoryResolver {
             ],
             stats: percentStats(values),
             detailRows: [
+                MetricDetailRow(id: "temperature", label: "Temperature", value: temperature),
                 MetricDetailRow(id: "p-cores", label: "P-cores", value: pAverage),
                 MetricDetailRow(id: "e-cores", label: "E-cores", value: eAverage),
                 MetricDetailRow(id: "cores", label: "Logical cores", value: "\(cpu?.perCoreUsage.count ?? 0)"),
-                MetricDetailRow(id: "busiest-core", label: "Busiest core", value: busiestCoreLabel(cpu))
+                MetricDetailRow(id: "busiest-core", label: "Busiest core", value: busiestCoreLabel(cpu)),
+                MetricDetailRow(id: "soc-temperature", label: "SoC temperature", value: formattedTemperature(thermal?.socCelsius, settings: settings)),
+                MetricDetailRow(id: "thermal-state", label: "Thermal state", value: thermal?.thermalState.rawValue.capitalized ?? "Unavailable")
             ]
         )
     }
@@ -120,16 +126,19 @@ enum MetricHistoryResolver {
     private static func gpu(
         snapshot: MetricSnapshot,
         history: [MetricSnapshot],
+        settings: AppSettings,
         windowLabel: String,
         timeDomain: ClosedRange<Date>
     ) -> MetricHistoryDetail {
         let values = history.compactMap { $0.gpu?.totalUsage }
         let gpu = snapshot.gpu
+        let thermal = snapshot.thermal
         let current = gpu?.totalUsage.map(PercentFormatter.long) ?? "Unsupported"
+        let temperature = formattedTemperature(thermal?.gpuCelsius, settings: settings)
 
         return MetricHistoryDetail(
             currentPrimary: current,
-            currentSecondary: gpu?.frequencyMHz.map { "\(Int($0.rounded())) MHz" },
+            currentSecondary: temperature,
             windowLabel: windowLabel,
             timeDomain: timeDomain,
             sampleCount: values.count,
@@ -145,8 +154,11 @@ enum MetricHistoryResolver {
             ],
             stats: percentStats(values),
             detailRows: [
+                MetricDetailRow(id: "temperature", label: "Temperature", value: temperature),
                 MetricDetailRow(id: "detail", label: "Detail", value: "Unsupported"),
-                MetricDetailRow(id: "frequency", label: "Frequency", value: gpu?.frequencyMHz.map { "\(Int($0.rounded())) MHz" } ?? "Unavailable")
+                MetricDetailRow(id: "frequency", label: "Frequency", value: gpu?.frequencyMHz.map { "\(Int($0.rounded())) MHz" } ?? "Unavailable"),
+                MetricDetailRow(id: "soc-temperature", label: "SoC temperature", value: formattedTemperature(thermal?.socCelsius, settings: settings)),
+                MetricDetailRow(id: "thermal-state", label: "Thermal state", value: thermal?.thermalState.rawValue.capitalized ?? "Unavailable")
             ]
         )
     }
@@ -371,6 +383,10 @@ enum MetricHistoryResolver {
 
     private static func byteRate(_ value: Double) -> String {
         ByteRateFormatter.long(UInt64(max(value, 0)))
+    }
+
+    private static func formattedTemperature(_ celsius: Double?, settings: AppSettings) -> String {
+        celsius.map { TemperatureFormatter.long($0, unit: settings.temperatureUnit) } ?? "Unavailable"
     }
 
     private static func thermalScale(_ settings: AppSettings) -> MetricChartScale {

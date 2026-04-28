@@ -15,6 +15,10 @@ extension MenuBarItem {
             return "Disk"
         }
     }
+
+    var usesTemperatureSecondaryValue: Bool {
+        self == .cpu || self == .gpu
+    }
 }
 
 extension SamplingMode {
@@ -49,4 +53,3 @@ extension TemperatureUnit {
         }
     }
 }
-

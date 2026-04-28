@@ -84,13 +84,6 @@ private struct GeneralSettingsTab: View {
                 Toggle("Show unknown sensors", isOn: $settingsStore.settings.showUnknownSensors)
                 Toggle("Include VPN interfaces", isOn: $settingsStore.settings.includeVPNInterfaces)
                 Toggle("Include external disks", isOn: $settingsStore.settings.includeExternalDisks)
-
-                Picker("Temperature unit", selection: $settingsStore.settings.temperatureUnit) {
-                    ForEach(TemperatureUnit.allCases) { unit in
-                        Text(unit.title).tag(unit)
-                    }
-                }
-                .frame(maxWidth: 260)
             }
 
             Section("App") {
@@ -153,7 +146,7 @@ private struct MetricSettingsTab: View {
                     .disabled(!settingsStore.canDisableMenuBarItem(item) && settingsStore.isMenuBarItemEnabled(item))
 
                 if display.hasConfigurableSecondaryValue {
-                    Toggle("Show secondary value", isOn: metricSettingsBinding(\.showsSecondaryValue))
+                    Toggle(secondaryValueToggleTitle, isOn: metricSettingsBinding(\.showsSecondaryValue))
                 }
                 Toggle("Show menu bar chart", isOn: metricSettingsBinding(\.showsMenuBarSparkline))
 
@@ -180,9 +173,24 @@ private struct MetricSettingsTab: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            if item.usesTemperatureSecondaryValue {
+                Section("Temperature") {
+                    Picker("Temperature unit", selection: $settingsStore.settings.temperatureUnit) {
+                        ForEach(TemperatureUnit.allCases) { unit in
+                            Text(unit.title).tag(unit)
+                        }
+                    }
+                    .frame(maxWidth: 260)
+                }
+            }
         }
         .formStyle(.grouped)
         .padding(.top, 8)
+    }
+
+    private var secondaryValueToggleTitle: String {
+        item.usesTemperatureSecondaryValue ? "Show temperature value" : "Show secondary value"
     }
 
     @ViewBuilder

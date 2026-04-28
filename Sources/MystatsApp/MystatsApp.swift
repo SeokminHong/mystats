@@ -81,7 +81,7 @@ struct MystatsApp: App {
           --version             Print the installed version.
           --help, -h            Print this help.
           --open-settings       Launch the settings window.
-          --open-metric=<name>  Open a metric popover for cpu, gpu, temperature, network, or disk.
+          --open-metric=<name>  Open a metric popover for cpu, gpu, network, or disk.
         """)
         return true
     }
@@ -92,7 +92,8 @@ struct MystatsApp: App {
                 return nil
             }
             let value = String(argument.dropFirst("--open-metric=".count))
-            return MenuBarItem(rawValue: value)
+            let item = MenuBarItem(rawValue: value)
+            return item?.isUserVisible == true ? item : nil
         }.first
     }
 

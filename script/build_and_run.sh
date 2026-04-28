@@ -101,7 +101,7 @@ case "$MODE" in
     open_metric
     ;;
   *)
-    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify|--settings|--metric <cpu|gpu|temperature|network|disk>]" >&2
+    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify|--settings|--metric <cpu|gpu|network|disk>]" >&2
     exit 2
     ;;
 esac

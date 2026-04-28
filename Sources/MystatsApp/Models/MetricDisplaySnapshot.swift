@@ -29,8 +29,8 @@ enum MetricMenuLayout {
 
     var hasConfigurableSecondaryValue: Bool {
         switch self {
-        case .single(_, let secondary, let secondaryConfigurable):
-            return secondaryConfigurable && secondary != nil
+        case .single(_, _, let secondaryConfigurable):
+            return secondaryConfigurable
         case .paired:
             return false
         }
@@ -51,9 +51,9 @@ enum MetricDisplayResolver {
     ) -> MetricDisplaySnapshot {
         switch item {
         case .cpu:
-            return cpu(snapshot: snapshot, history: history)
+            return cpu(snapshot: snapshot, history: history, settings: settings)
         case .gpu:
-            return gpu(snapshot: snapshot, history: history)
+            return gpu(snapshot: snapshot, history: history, settings: settings)
         case .temperature:
             return temperature(snapshot: snapshot, history: history, settings: settings)
         case .network:
@@ -63,12 +63,16 @@ enum MetricDisplayResolver {
         }
     }
 
-    private static func cpu(snapshot: MetricSnapshot, history: [MetricSnapshot]) -> MetricDisplaySnapshot {
+    private static func cpu(
+        snapshot: MetricSnapshot,
+        history: [MetricSnapshot],
+        settings: AppSettings
+    ) -> MetricDisplaySnapshot {
         guard let cpu = snapshot.cpu else {
             return unavailable()
         }
         let primary = PercentFormatter.short(cpu.totalUsage)
-        let secondary = coreGroupSummary(cpu)
+        let secondary = temperature(snapshot.thermal?.cpuCelsius, settings: settings)
 
         return MetricDisplaySnapshot(
             primaryValue: primary,
@@ -79,16 +83,21 @@ enum MetricDisplayResolver {
         )
     }
 
-    private static func gpu(snapshot: MetricSnapshot, history: [MetricSnapshot]) -> MetricDisplaySnapshot {
+    private static func gpu(
+        snapshot: MetricSnapshot,
+        history: [MetricSnapshot],
+        settings: AppSettings
+    ) -> MetricDisplaySnapshot {
         guard let gpu = snapshot.gpu else {
             return unavailable()
         }
         let primary = gpu.totalUsage.map(PercentFormatter.short) ?? "N/A"
+        let secondary = temperature(snapshot.thermal?.gpuCelsius, settings: settings)
 
         return MetricDisplaySnapshot(
             primaryValue: primary,
-            secondaryValue: nil,
-            menuLayout: .single(primary: primary, secondary: nil, secondaryConfigurable: false),
+            secondaryValue: secondary,
+            menuLayout: .single(primary: primary, secondary: secondary, secondaryConfigurable: true),
             status: gpu.status,
             chartSeries: [MetricMenuChartSeries(values: history.compactMap { $0.gpu?.totalUsage })]
         )
@@ -177,11 +186,7 @@ enum MetricDisplayResolver {
         )
     }
 
-    private static func coreGroupSummary(_ cpu: CPUMetrics) -> String? {
-        guard let performance = cpu.performanceCoreAverage, let efficiency = cpu.efficiencyCoreAverage else {
-            return nil
-        }
-
-        return "P\(PercentFormatter.short(performance)) E\(PercentFormatter.short(efficiency))"
+    private static func temperature(_ celsius: Double?, settings: AppSettings) -> String? {
+        celsius.map { TemperatureFormatter.short($0, unit: settings.temperatureUnit) }
     }
 }
