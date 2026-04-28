@@ -758,7 +758,7 @@ C32 G18 61°
 - Network 메뉴바 항목도 다른 지표와 동일하게 leading system icon을 표시한다.
 - chart가 켜진 메뉴바 항목은 텍스트를 chart 방향으로 정렬해 값 끝과 chart 시작 사이의 여백이 항목별로 비슷하게 보이도록 한다.
 - CPU/GPU/Temperature처럼 leading icon이 있는 항목은 icon과 label/value 그룹 사이의 여백이 커지지 않도록 label/value 그룹의 오른쪽 정렬 이동량을 제한한다.
-- Network/Disk peer pair 항목은 방향 label을 텍스트 영역의 start에 고정하고 값은 end 정렬한다. 특히 Disk의 `R`/`W` label은 start 정렬되어야 하며, read/write 값은 서로 같은 end 기준선에 맞춰야 한다.
+- Network/Disk peer pair 항목은 방향 label과 값을 하나의 compact group으로 붙여 표시한다. label과 값 사이의 여백은 3pt 안팎으로 유지하고, 전체 group은 chart가 켜져 있을 때 chart 쪽으로 정렬한다.
 - leading icon이 있는 peer pair 항목은 icon과 방향 label 사이의 거리를 조밀하게 유지한다.
 - 메뉴바 sparkline chart 폭은 모든 지표에서 Disk 기준인 42pt로 통일한다.
 - Network 메뉴바 항목은 leading icon과 download/upload 두 줄 값을 유지하되, end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 116pt, chart off 70pt, chart 42pt로 둔다.
