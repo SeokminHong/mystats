@@ -74,10 +74,13 @@ struct MenuBarMetricLabelView: View {
 
         case .paired(let first, let second):
             VStack(alignment: .leading, spacing: 1) {
-                peerRow(first, presentation: presentation)
-                peerRow(second, presentation: presentation)
+                peerRow(first)
+                peerRow(second)
             }
-            .frame(width: peerTextWidth(presentation: presentation, itemSettings: itemSettings), alignment: .leading)
+            .frame(
+                width: peerTextWidth(presentation: presentation, itemSettings: itemSettings),
+                alignment: itemSettings.showsMenuBarSparkline ? .trailing : .leading
+            )
             .monospacedDigit()
             .lineLimit(1)
             .minimumScaleFactor(0.86)
@@ -94,30 +97,15 @@ struct MenuBarMetricLabelView: View {
         .font(.system(size: 9, weight: .semibold))
     }
 
-    @ViewBuilder
-    private func peerRow(_ value: MetricMenuPeerValue, presentation: MetricPresentation) -> some View {
-        switch presentation.peerLayout {
-        case .compact:
-            HStack(spacing: 3) {
-                Text(value.label)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 9, alignment: .center)
-                Text(value.value)
-                    .foregroundStyle(.primary)
-            }
-            .font(.system(size: 8.4, weight: .semibold))
-        case .splitLabelAndValue:
-            HStack(spacing: 3) {
-                Text(value.label)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 9, alignment: .leading)
-                Spacer(minLength: 2)
-                Text(value.value)
-                    .foregroundStyle(.primary)
-                    .frame(alignment: .trailing)
-            }
-            .font(.system(size: 8.4, weight: .semibold))
+    private func peerRow(_ value: MetricMenuPeerValue) -> some View {
+        HStack(spacing: 3) {
+            Text(value.label)
+                .foregroundStyle(.secondary)
+                .frame(width: 9, alignment: .center)
+            Text(value.value)
+                .foregroundStyle(.primary)
         }
+        .font(.system(size: 8.4, weight: .semibold))
     }
 
     private func peerTextWidth(

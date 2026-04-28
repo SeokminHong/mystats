@@ -9,7 +9,6 @@ struct MetricPresentation {
     let tint: Color
     let showsMenuBarIcon: Bool
     let menuSparklineWidth: CGFloat
-    let peerLayout: MetricPeerLayout
 
     init(
         title: String,
@@ -18,8 +17,7 @@ struct MetricPresentation {
         compactMenuWidth: CGFloat? = nil,
         tint: Color,
         showsMenuBarIcon: Bool = true,
-        menuSparklineWidth: CGFloat = 42,
-        peerLayout: MetricPeerLayout = .compact
+        menuSparklineWidth: CGFloat = 42
     ) {
         self.title = title
         self.symbolName = symbolName
@@ -28,17 +26,11 @@ struct MetricPresentation {
         self.tint = tint
         self.showsMenuBarIcon = showsMenuBarIcon
         self.menuSparklineWidth = menuSparklineWidth
-        self.peerLayout = peerLayout
     }
 
     func menuWidth(showingSparkline: Bool) -> CGFloat {
         showingSparkline ? menuWidth : compactMenuWidth
     }
-}
-
-enum MetricPeerLayout {
-    case compact
-    case splitLabelAndValue
 }
 
 extension MenuBarItem {
@@ -57,8 +49,7 @@ extension MenuBarItem {
                 menuWidth: 116,
                 compactMenuWidth: 70,
                 tint: .green,
-                menuSparklineWidth: 42,
-                peerLayout: .splitLabelAndValue
+                menuSparklineWidth: 42
             )
         case .disk:
             return MetricPresentation(
@@ -66,8 +57,7 @@ extension MenuBarItem {
                 symbolName: "internaldrive",
                 menuWidth: 128,
                 tint: .teal,
-                menuSparklineWidth: 42,
-                peerLayout: .splitLabelAndValue
+                menuSparklineWidth: 42
             )
         }
     }
