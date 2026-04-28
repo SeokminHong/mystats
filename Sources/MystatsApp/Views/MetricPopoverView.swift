@@ -68,6 +68,7 @@ struct MetricPopoverView: View {
     private func header(presentation: MetricPresentation, display: MetricDisplaySnapshot) -> some View {
         HStack(spacing: 8) {
             Image(systemName: presentation.symbolName)
+                .symbolRenderingMode(.monochrome)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(presentation.tint)
 

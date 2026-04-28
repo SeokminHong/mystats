@@ -352,7 +352,7 @@ enum StatusItemImageRenderer {
 
         let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
         let chartGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
-        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 15 : 1
+        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 14 : 1
         let textWidth = width - textX - chartWidth - chartGap
         let alignsTextTowardChart = itemSettings.showsMenuBarSparkline
 
@@ -382,8 +382,16 @@ enum StatusItemImageRenderer {
             }
 
         case .paired(let first, let second):
-            drawPeerValue(first, in: NSRect(x: textX, y: 10, width: textWidth, height: 9), alignsTowardChart: alignsTextTowardChart)
-            drawPeerValue(second, in: NSRect(x: textX, y: 2, width: textWidth, height: 9), alignsTowardChart: alignsTextTowardChart)
+            let firstRect = NSRect(x: textX, y: 10, width: textWidth, height: 9)
+            let secondRect = NSRect(x: textX, y: 2, width: textWidth, height: 9)
+            switch item.presentation.peerLayout {
+            case .compact:
+                drawPeerValue(first, in: firstRect, alignsTowardChart: alignsTextTowardChart)
+                drawPeerValue(second, in: secondRect, alignsTowardChart: alignsTextTowardChart)
+            case .splitLabelAndValue:
+                drawSplitPeerValue(first, in: firstRect)
+                drawSplitPeerValue(second, in: secondRect)
+            }
         }
 
         if itemSettings.showsMenuBarSparkline {
@@ -398,8 +406,13 @@ enum StatusItemImageRenderer {
     }
 
     private static func drawSymbol(_ item: MenuBarItem, in rect: NSRect) {
-        let symbol = NSImage(systemSymbolName: item.presentation.symbolName, accessibilityDescription: nil)
-        symbol?.draw(in: rect)
+        guard let symbol = NSImage(systemSymbolName: item.presentation.symbolName, accessibilityDescription: nil) else {
+            return
+        }
+        let template = symbol.copy() as? NSImage ?? symbol
+        template.isTemplate = true
+        NSColor.labelColor.set()
+        template.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
     }
 
     private static func drawText(
@@ -433,6 +446,17 @@ enum StatusItemImageRenderer {
 
         drawText(value.label, in: NSRect(x: groupX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: .secondaryLabelColor, weight: .semibold)
         drawText(value.value, in: NSRect(x: groupX + labelWidth + gap, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold)
+    }
+
+    private static func drawSplitPeerValue(_ value: MetricMenuPeerValue, in rect: NSRect) {
+        let labelWidth = max(ceil(textWidth(value.label, size: 8.4, weight: .semibold)), 9)
+        let gap: CGFloat = 3
+        let availableValueWidth = max(rect.width - labelWidth - gap, 1)
+        let valueWidth = min(ceil(textWidth(value.value, size: 8.4, weight: .semibold)), availableValueWidth)
+        let valueX = max(rect.maxX - valueWidth, rect.minX + labelWidth + gap)
+
+        drawText(value.label, in: NSRect(x: rect.minX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: .secondaryLabelColor, weight: .semibold)
+        drawText(value.value, in: NSRect(x: valueX, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold)
     }
 
     private static func compactTextRect(

@@ -125,10 +125,10 @@ enum MetricDisplayResolver {
             status: network.status,
             chartSeries: [
                 MetricMenuChartSeries(
-                    values: history.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
+                    values: history.compactMap { $0.network?.downloadBytesPerSecond }.map { Double($0) }
                 ),
                 MetricMenuChartSeries(
-                    values: history.compactMap { $0.network?.uploadBytesPerSecond }.map(Double.init)
+                    values: history.compactMap { $0.network?.uploadBytesPerSecond }.map { Double($0) }
                 )
             ]
         )
@@ -151,10 +151,10 @@ enum MetricDisplayResolver {
             status: disk.status,
             chartSeries: [
                 MetricMenuChartSeries(
-                    values: history.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
+                    values: history.compactMap { $0.disk?.readBytesPerSecond }.map { Double($0) }
                 ),
                 MetricMenuChartSeries(
-                    values: history.compactMap { $0.disk?.writeBytesPerSecond }.map(Double.init)
+                    values: history.compactMap { $0.disk?.writeBytesPerSecond }.map { Double($0) }
                 )
             ]
         )

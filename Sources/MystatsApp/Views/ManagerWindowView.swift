@@ -129,6 +129,7 @@ private struct MetricSettingsTab: View {
             Section {
                 HStack(spacing: 12) {
                     Image(systemName: presentation.symbolName)
+                        .symbolRenderingMode(.monochrome)
                         .font(.system(size: 24, weight: .semibold))
                         .foregroundStyle(presentation.tint)
                         .frame(width: 34)

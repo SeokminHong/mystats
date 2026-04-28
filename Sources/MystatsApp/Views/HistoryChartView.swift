@@ -20,9 +20,6 @@ struct HistoryChartView: View {
 
     private var chart: some View {
         Canvas { context, size in
-            let axisWidth: CGFloat = 24
-            let plotWidth = max(size.width - axisWidth, 1)
-            let plotSize = CGSize(width: plotWidth, height: size.height)
             let allValues = series.flatMap(\.values).filter { $0.isFinite }
             guard
                 !allValues.isEmpty,
@@ -34,7 +31,9 @@ struct HistoryChartView: View {
             }
 
             let independentTrendScale = usesIndependentTrendScale
-            let axis = independentTrendScale ? trendAxisLabelDomain : axisDomain(for: allValues)
+            let axis = independentTrendScale ? trendAxisLabelDomain(for: allValues) : axisDomain(for: allValues)
+            let plotWidth = max(size.width - axis.labelWidth, 1)
+            let plotSize = CGSize(width: plotWidth, height: size.height)
             drawChartBackground(context: context, size: plotSize)
             drawGrid(context: context, size: plotSize)
             drawAxisLabels(context: context, size: size, axis: axis)
@@ -256,7 +255,7 @@ struct HistoryChartView: View {
     }
 
     private func drawAxisLabels(context: GraphicsContext, size: CGSize, axis: ChartAxis) {
-        let x = size.width - 11
+        let x = size.width - axis.labelWidth / 2
         context.draw(
             Text(axis.upperLabel)
                 .font(.caption2)
@@ -293,7 +292,7 @@ struct HistoryChartView: View {
     private func axisDomain(for values: [Double]) -> ChartAxis {
         switch commonScale {
         case .some(.fixed(let domain, let lowerLabel, let upperLabel)):
-            return ChartAxis(min: domain.lowerBound, max: domain.upperBound, lowerLabel: lowerLabel, upperLabel: upperLabel)
+            return ChartAxis(min: domain.lowerBound, max: domain.upperBound, lowerLabel: lowerLabel, upperLabel: upperLabel, labelWidth: 24)
         case .some(.automaticAdaptive):
             return adaptiveAxisDomain(for: values)
         case .some(.automaticFloorZero), .some(.independentTrend), nil:
@@ -347,13 +346,18 @@ struct HistoryChartView: View {
         }
     }
 
-    private var trendAxisLabelDomain: ChartAxis {
-        ChartAxis(min: 0, max: 1, lowerLabel: "Low", upperLabel: "High")
+    private func trendAxisLabelDomain(for values: [Double]) -> ChartAxis {
+        switch independentTrendAxisLabelStyle {
+        case .numeric:
+            return ChartAxis(min: 0, max: 1, lowerLabel: "0", upperLabel: "1", labelWidth: 24)
+        case .byteRate:
+            return byteRateAxisDomain(for: values)
+        }
     }
 
     private func trendAxisDomain(for values: [Double]) -> ChartAxis {
         let domain = ChartDomainResolver.trendDomain(for: values)
-        return ChartAxis(min: domain.lower, max: domain.upper, lowerLabel: "Low", upperLabel: "High")
+        return ChartAxis(min: domain.lower, max: domain.upper, lowerLabel: "", upperLabel: "", labelWidth: 24)
     }
 
     private func adaptiveAxisDomain(for values: [Double]) -> ChartAxis {
@@ -361,7 +365,7 @@ struct HistoryChartView: View {
         let minValue = max(robustDomain.lower, 0)
         let maxValue = max(robustDomain.upper, minValue)
         guard maxValue > 0 else {
-            return ChartAxis(min: 0, max: 1, lowerLabel: "0", upperLabel: "1")
+            return ChartAxis(min: 0, max: 1, lowerLabel: "0", upperLabel: "1", labelWidth: 24)
         }
 
         let rawSpan = maxValue - minValue
@@ -386,7 +390,8 @@ struct HistoryChartView: View {
             min: lower,
             max: upper,
             lowerLabel: abbreviated(lower),
-            upperLabel: abbreviated(upper)
+            upperLabel: abbreviated(upper),
+            labelWidth: 24
         )
     }
 
@@ -396,8 +401,30 @@ struct HistoryChartView: View {
             min: 0,
             max: maxValue,
             lowerLabel: "0",
-            upperLabel: abbreviated(maxValue)
+            upperLabel: abbreviated(maxValue),
+            labelWidth: 24
         )
+    }
+
+    private func byteRateAxisDomain(for values: [Double]) -> ChartAxis {
+        let finiteValues = values.filter { $0.isFinite }
+        let lower = max(finiteValues.min() ?? 0, 0)
+        var upper = max(finiteValues.max() ?? 0, lower + 1)
+        if upper <= lower {
+            upper = lower + 1
+        }
+
+        return ChartAxis(
+            min: lower,
+            max: upper,
+            lowerLabel: ByteRateFormatter.long(lower),
+            upperLabel: ByteRateFormatter.long(upper),
+            labelWidth: 58
+        )
+    }
+
+    private var independentTrendAxisLabelStyle: MetricChartAxisLabelStyle {
+        series.contains { $0.axisLabelStyle == .byteRate } ? .byteRate : .numeric
     }
 
     private func abbreviated(_ value: Double) -> String {
@@ -419,6 +446,7 @@ private struct ChartAxis {
     let max: Double
     let lowerLabel: String
     let upperLabel: String
+    let labelWidth: CGFloat
 }
 
 private struct RenderedChartPoint {

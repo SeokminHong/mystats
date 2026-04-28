@@ -20,6 +20,10 @@ enum ByteRateFormatter {
         "\(formatted(bytesPerSecond))/s"
     }
 
+    static func long(_ bytesPerSecond: Double) -> String {
+        long(UInt64(max(0, bytesPerSecond.rounded())))
+    }
+
     private static func formatted(_ bytesPerSecond: UInt64) -> String {
         guard bytesPerSecond > 0 else {
             return "0 KB"

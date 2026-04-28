@@ -20,6 +20,7 @@ struct MetricChartSeries: Identifiable {
     let tint: Color
     let formattedCurrent: String
     let scale: MetricChartScale
+    var axisLabelStyle: MetricChartAxisLabelStyle = .numeric
 
     var values: [Double] {
         points.compactMap(\.value)
@@ -36,6 +37,11 @@ enum MetricChartScale {
     case automaticAdaptive
     case automaticFloorZero
     case independentTrend
+}
+
+enum MetricChartAxisLabelStyle {
+    case numeric
+    case byteRate
 }
 
 struct MetricSummaryStat: Identifiable {
@@ -187,8 +193,8 @@ enum MetricHistoryResolver {
         timeDomain: ClosedRange<Date>
     ) -> MetricHistoryDetail {
         let chartHistory = historyIncludingCurrent(snapshot, in: history)
-        let downloadValues = chartHistory.compactMap { $0.network?.downloadBytesPerSecond }.map(Double.init)
-        let uploadValues = chartHistory.compactMap { $0.network?.uploadBytesPerSecond }.map(Double.init)
+        let downloadValues = chartHistory.compactMap { $0.network?.downloadBytesPerSecond }.map { Double($0) }
+        let uploadValues = chartHistory.compactMap { $0.network?.uploadBytesPerSecond }.map { Double($0) }
         let network = snapshot.network
 
         return MetricHistoryDetail(
@@ -198,8 +204,24 @@ enum MetricHistoryResolver {
             timeDomain: timeDomain,
             sampleCount: max(downloadValues.count, uploadValues.count),
             series: [
-                MetricChartSeries(id: "network-down", label: "Download", points: points(chartHistory) { $0.network?.downloadBytesPerSecond }, tint: .green, formattedCurrent: network.map { ByteRateFormatter.long($0.downloadBytesPerSecond) } ?? "N/A", scale: .independentTrend),
-                MetricChartSeries(id: "network-up", label: "Upload", points: points(chartHistory) { $0.network?.uploadBytesPerSecond }, tint: .mint, formattedCurrent: network.map { ByteRateFormatter.long($0.uploadBytesPerSecond) } ?? "N/A", scale: .independentTrend)
+                MetricChartSeries(
+                    id: "network-down",
+                    label: "Download",
+                    points: points(chartHistory) { $0.network?.downloadBytesPerSecond },
+                    tint: .green,
+                    formattedCurrent: network.map { ByteRateFormatter.long($0.downloadBytesPerSecond) } ?? "N/A",
+                    scale: .independentTrend,
+                    axisLabelStyle: .byteRate
+                ),
+                MetricChartSeries(
+                    id: "network-up",
+                    label: "Upload",
+                    points: points(chartHistory) { $0.network?.uploadBytesPerSecond },
+                    tint: .mint,
+                    formattedCurrent: network.map { ByteRateFormatter.long($0.uploadBytesPerSecond) } ?? "N/A",
+                    scale: .independentTrend,
+                    axisLabelStyle: .byteRate
+                )
             ],
             stats: byteRateStats(
                 downloadValues,
@@ -220,8 +242,8 @@ enum MetricHistoryResolver {
         timeDomain: ClosedRange<Date>
     ) -> MetricHistoryDetail {
         let chartHistory = historyIncludingCurrent(snapshot, in: history)
-        let readValues = chartHistory.compactMap { $0.disk?.readBytesPerSecond }.map(Double.init)
-        let writeValues = chartHistory.compactMap { $0.disk?.writeBytesPerSecond }.map(Double.init)
+        let readValues = chartHistory.compactMap { $0.disk?.readBytesPerSecond }.map { Double($0) }
+        let writeValues = chartHistory.compactMap { $0.disk?.writeBytesPerSecond }.map { Double($0) }
         let disk = snapshot.disk
 
         return MetricHistoryDetail(
@@ -231,8 +253,24 @@ enum MetricHistoryResolver {
             timeDomain: timeDomain,
             sampleCount: max(readValues.count, writeValues.count),
             series: [
-                MetricChartSeries(id: "disk-read", label: "Read", points: points(chartHistory) { $0.disk?.readBytesPerSecond }, tint: .teal, formattedCurrent: disk.map { ByteRateFormatter.long($0.readBytesPerSecond) } ?? "N/A", scale: .independentTrend),
-                MetricChartSeries(id: "disk-write", label: "Write", points: points(chartHistory) { $0.disk?.writeBytesPerSecond }, tint: .cyan, formattedCurrent: disk.map { ByteRateFormatter.long($0.writeBytesPerSecond) } ?? "N/A", scale: .independentTrend)
+                MetricChartSeries(
+                    id: "disk-read",
+                    label: "Read",
+                    points: points(chartHistory) { $0.disk?.readBytesPerSecond },
+                    tint: .teal,
+                    formattedCurrent: disk.map { ByteRateFormatter.long($0.readBytesPerSecond) } ?? "N/A",
+                    scale: .independentTrend,
+                    axisLabelStyle: .byteRate
+                ),
+                MetricChartSeries(
+                    id: "disk-write",
+                    label: "Write",
+                    points: points(chartHistory) { $0.disk?.writeBytesPerSecond },
+                    tint: .cyan,
+                    formattedCurrent: disk.map { ByteRateFormatter.long($0.writeBytesPerSecond) } ?? "N/A",
+                    scale: .independentTrend,
+                    axisLabelStyle: .byteRate
+                )
             ],
             stats: byteRateStats(
                 readValues,
@@ -275,7 +313,7 @@ enum MetricHistoryResolver {
         value: (MetricSnapshot) -> UInt64?
     ) -> [MetricChartPoint] {
         history.map {
-            MetricChartPoint(timestamp: $0.timestamp, value: value($0).map(Double.init))
+            MetricChartPoint(timestamp: $0.timestamp, value: value($0).map { Double($0) })
         }
     }
 
