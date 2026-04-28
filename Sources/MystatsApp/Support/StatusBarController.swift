@@ -352,8 +352,7 @@ enum StatusItemImageRenderer {
 
         let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
         let chartGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
-        let iconTextGap: CGFloat = display.menuLayout.isPaired ? 1 : 2
-        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 12 + iconTextGap : 1
+        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 14 : 1
         let textWidth = width - textX - chartWidth - chartGap
         let alignsTextTowardChart = itemSettings.showsMenuBarSparkline
 
@@ -415,10 +414,12 @@ enum StatusItemImageRenderer {
         in rect: NSRect,
         size: CGFloat,
         color: NSColor,
-        weight: NSFont.Weight
+        weight: NSFont.Weight,
+        alignment: NSTextAlignment = .left
     ) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byClipping
+        paragraph.alignment = alignment
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight),
             .foregroundColor: color,
@@ -435,12 +436,16 @@ enum StatusItemImageRenderer {
         let labelWidth = ceil(textWidth(value.label, size: 8.4, weight: .semibold))
         let gap: CGFloat = 3
         let availableValueWidth = max(rect.width - labelWidth - gap, 1)
-        let valueWidth = min(ceil(textWidth(value.value, size: 8.4, weight: .semibold)), availableValueWidth)
+        let valueWidth = min(peerValueColumnWidth, availableValueWidth)
         let groupWidth = min(labelWidth + gap + valueWidth, rect.width)
         let groupX = alignsTowardChart ? max(rect.maxX - groupWidth, rect.minX) : rect.minX
 
         drawText(value.label, in: NSRect(x: groupX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: .secondaryLabelColor, weight: .semibold)
-        drawText(value.value, in: NSRect(x: groupX + labelWidth + gap, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold)
+        drawText(value.value, in: NSRect(x: groupX + labelWidth + gap, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold, alignment: .right)
+    }
+
+    private static var peerValueColumnWidth: CGFloat {
+        38
     }
 
     private static func compactTextRect(
