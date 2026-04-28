@@ -187,6 +187,17 @@ collector 실패
 
 초기 프로젝트는 외부 의존성을 줄이기 위해 SwiftPM 기반 SwiftUI macOS 앱으로 구성한다. Xcode project는 필수 산출물이 아니며, 빌드와 실행은 `swift build`와 프로젝트 로컬 실행 스크립트가 담당한다.
 
+Homebrew 초기 배포는 SwiftPM 소스 태그를 기준으로 한다. Formula는 릴리스 태그의 tarball을 내려받아 release configuration으로 실행 파일을 빌드하고, 동일한 바이너리를 포함한 `mystats.app` 번들을 생성해 설치한다. 사용자는 `brew install seokminhong/brew/mystats` 후 `mystats` 명령으로 메뉴바 앱을 실행할 수 있어야 한다.
+
+배포 검증을 위해 GUI를 띄우지 않는 명령을 제공한다.
+
+```text
+mystats --version
+mystats --help
+```
+
+이 명령들은 앱 런타임, 메뉴바 컨트롤러, 설정 저장소를 초기화하지 않고 즉시 종료해야 한다. Homebrew formula의 `test do` 블록은 이 경로를 사용해 설치된 실행 파일의 기본 무결성을 확인한다.
+
 기본 구조:
 
 ```text
@@ -1071,12 +1082,24 @@ Thermal State:
 
 배포 목표:
 
-- `brew tap`과 `brew install --cask` 흐름으로 설치 가능해야 한다.
+- `brew tap`과 `brew install` 흐름으로 설치 가능해야 한다.
 - 앱은 설치 후 별도 CLI, daemon, runtime 설치 없이 실행되어야 한다.
-- release artifact는 코드 서명 및 공증된 앱 bundle을 기준으로 한다.
-- Homebrew cask는 version, sha256, URL, app stanza를 명확히 가진다.
+- 초기 formula는 version, sha256, URL, 설치된 app bundle, CLI launch wrapper를 명확히 가진다.
+- 서명/공증 배포 단계의 release artifact는 코드 서명 및 공증된 앱 bundle을 기준으로 한다.
+- 서명/공증된 artifact를 만들 수 있는 단계가 되면 cask 전환을 검토한다.
 
 초기 배포 형태:
+
+```text
+homebrew tap
+  -> formula mystats
+  -> SwiftPM source tag
+  -> release build
+  -> mystats.app 설치
+  -> mystats launch wrapper 설치
+```
+
+서명/공증 후 배포 형태:
 
 ```text
 homebrew tap
@@ -1167,8 +1190,9 @@ UI:
 
 배포:
 
-- Homebrew tap에서 cask 설치
+- Homebrew tap에서 formula 설치
 - 설치된 `mystats.app` 단독 실행
+- `mystats --version`이 GUI 실행 없이 버전을 출력하는지 확인
 - 코드 서명 확인
 - notarization 확인
 - fresh machine에서 외부 runtime 없이 실행 확인
@@ -1186,7 +1210,7 @@ UI:
 | 외장 디스크 포함 문제 | 디스크 값 혼란 | 내부 디스크 기본, 외장은 옵션 |
 | 외부 collector 의존 | 설치/업데이트 복잡도 증가 | 앱 내부 collector 우선, 외부 CLI runtime dependency 금지 |
 | 메뉴바 레이아웃 시프트 | 메뉴바 사용성 저하 | 지표별 fixed-width label과 monospaced digits |
-| Homebrew tap 배포 산출물 불일치 | 설치 실패 | release artifact, sha256, cask 검증 자동화 |
+| Homebrew tap 배포 산출물 불일치 | 설치 실패 | release artifact, sha256, formula/cask 검증 자동화 |
 | App Store 심사 리스크 | 배포 제한 | Homebrew tap 배포 우선 |
 
 ## 27. 미정 항목
@@ -1196,14 +1220,14 @@ UI:
 - GPU/온도 collector를 Swift/IOKit 계층만으로 구현할지, 정적으로 포함되는 native module을 둘지
 - GPU/온도 collector에서 private API 사용을 허용할지
 - unknown sensor debug view를 일반 설정에 둘지 개발자 설정으로 숨길지
-- Homebrew tap repository 이름과 release artifact URL 규칙
+- Homebrew cask 전환 시점과 release artifact URL 규칙
 
 현재 스펙의 기본 가정:
 
 - GPU/온도는 MVP 핵심 안정 지표가 아니므로, 불확실하면 표시하지 않는 쪽을 선택한다.
 - private API 사용 여부는 배포 정책과 함께 별도 결정한다.
 - `macmon`은 runtime dependency가 아니라 참고 구현 또는 선택적 내부 구현 재료로만 취급한다.
-- 최종 배포는 개인 Homebrew tap의 cask를 기준으로 한다.
+- 초기 배포는 개인 Homebrew tap의 formula를 기준으로 하고, 서명/공증된 app bundle artifact가 준비되면 cask 전환을 검토한다.
 
 ## 28. 참고 자료
 

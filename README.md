@@ -29,3 +29,20 @@ Run locally:
 The app currently boots with deterministic sample metrics while the real
 collectors are implemented.
 
+## Install
+
+```sh
+brew install seokminhong/brew/mystats
+```
+
+Launch:
+
+```sh
+mystats
+```
+
+Check the installed version without launching the menu bar app:
+
+```sh
+mystats --version
+```

@@ -4,10 +4,16 @@ import MystatsCore
 
 @main
 struct MystatsApp: App {
+    private static let version = "0.1.0"
+
     @StateObject private var metricStore = AppRuntime.shared.metricStore
     @StateObject private var settingsStore = AppRuntime.shared.settingsStore
 
     init() {
+        if Self.handleCommandLineInfo() {
+            Foundation.exit(0)
+        }
+
         #if DEBUG
         if let outputPath = Self.qaRenderOutputPath() {
             do {
@@ -55,6 +61,29 @@ struct MystatsApp: App {
                     metricStore.startPreviewUpdates()
                 }
         }
+    }
+
+    private static func handleCommandLineInfo() -> Bool {
+        let arguments = Set(CommandLine.arguments.dropFirst())
+        if arguments.contains("--version") {
+            print("mystats \(version)")
+            return true
+        }
+
+        guard arguments.contains("--help") || arguments.contains("-h") else {
+            return false
+        }
+
+        print("""
+        usage: mystats [--version] [--help] [--open-settings] [--open-metric=<metric>]
+
+        options:
+          --version             Print the installed version.
+          --help, -h            Print this help.
+          --open-settings       Launch the settings window.
+          --open-metric=<name>  Open a metric popover for cpu, gpu, temperature, network, or disk.
+        """)
+        return true
     }
 
     private static func requestedMetricPopover() -> MenuBarItem? {
