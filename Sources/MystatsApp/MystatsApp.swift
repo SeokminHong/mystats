@@ -4,7 +4,7 @@ import MystatsCore
 
 @main
 struct MystatsApp: App {
-    private static let version = "0.1.0"
+    private static let version = "0.2.0"
 
     @StateObject private var metricStore = AppRuntime.shared.metricStore
     @StateObject private var settingsStore = AppRuntime.shared.settingsStore

@@ -6,6 +6,8 @@ The product goal is to show accurate, low-overhead CPU, GPU, thermal, disk, and
 network status without requiring privileged helpers, external daemons, or runtime
 dependencies.
 
+![mystats menu bar render](Assets/README/status-items-chart-on.png)
+
 ## Development
 
 Build:

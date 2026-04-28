@@ -4,6 +4,7 @@ set -euo pipefail
 MODE="${1:-run}"
 METRIC="${2:-cpu}"
 APP_NAME="mystats"
+APP_VERSION="0.2.0"
 BUNDLE_ID="com.seokmin.mystats"
 MIN_SYSTEM_VERSION="13.0"
 
@@ -49,7 +50,7 @@ cat >"$INFO_PLIST" <<PLIST
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>$APP_VERSION</string>
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>LSMinimumSystemVersion</key>

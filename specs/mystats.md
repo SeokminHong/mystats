@@ -1116,6 +1116,24 @@ App Store 배포:
 - Sparkle은 필수 범위에서 제외한다.
 - Sparkle을 추가할 경우 Homebrew 업데이트 경로와 충돌하지 않도록 별도 스펙을 작성한다.
 
+### 24.1 0.2.0 릴리즈 기준
+
+`0.2.0`은 Homebrew formula 기반 소스 태그 릴리즈로 배포한다.
+
+포함 범위:
+
+- CPU/GPU 메뉴바와 팝오버에서 온도를 하위 보조값으로 표시한다.
+- CPU/GPU peer value column과 메뉴바 항목 간격을 안정적으로 정렬한다.
+- README는 현재 메뉴바 렌더 상태를 보여주는 DEBUG visual QA 이미지를 포함한다.
+
+완료 기준:
+
+- 앱의 `--version` 출력과 local app bundle의 `CFBundleShortVersionString`은 `0.2.0`이어야 한다.
+- `swift test`가 통과해야 한다.
+- DEBUG visual QA render가 README에 첨부한 이미지를 생성할 수 있어야 한다.
+- GitHub 태그 `v0.2.0`의 source tarball sha256을 기준으로 Homebrew formula를 갱신한다.
+- Homebrew formula의 `test do`는 설치된 `mystats --version`에서 `mystats 0.2.0`을 확인한다.
+
 ## 25. 테스트 계획
 
 CPU:
