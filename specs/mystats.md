@@ -6,7 +6,7 @@
 
 ## 1. 제품 원칙
 
-`mystats`는 M1-M4 계열 Apple Silicon Mac에서 CPU, GPU, 온도, 디스크 I/O, 네트워크 I/O를 메뉴바와 팝오버에서 빠르게 확인하는 경량 모니터링 앱이다.
+`mystats`는 M1-M4 계열 Apple Silicon Mac에서 CPU, GPU, 디스크 I/O, 네트워크 I/O를 메뉴바와 팝오버에서 빠르게 확인하는 경량 모니터링 앱이다. 온도는 독립 메뉴바 지표가 아니라 CPU/GPU의 하위 보조값으로 표시한다.
 
 목표는 iStat Menus처럼 가능한 모든 하드웨어 정보를 완전하게 보여주는 것이 아니라, 일반 사용자 권한으로 안정적으로 수집할 수 있는 핵심 지표를 낮은 오버헤드로 표시하는 것이다.
 
@@ -67,7 +67,8 @@
 조건부로 지원하는 기능:
 
 - GPU 전체 사용률
-- CPU/GPU/SoC 추정 온도
+- CPU/GPU 추정 온도를 CPU/GPU의 secondary value로 표시
+- SoC 추정 온도와 시스템 thermal state는 CPU/GPU detail에서 참고 정보로 표시
 - 시스템 thermal state
 - unknown sensor debug view
 
@@ -712,7 +713,7 @@ chart gap policy:
 기본 메뉴바 표시 항목:
 
 ```text
-CPU | GPU | Temp | Network
+CPU | GPU | Network
 ```
 
 각 지표는 하나의 긴 메뉴바 문자열로 합치지 않고, 독립된 `NSStatusItem` 항목으로 표시한다. 사용자는 settings window의 metric tab에서 각 지표 항목을 켜고 끌 수 있다.
@@ -740,42 +741,40 @@ CPU | GPU | Temp | Network
 ```text
 CPU 32%
 GPU 18%
-61°C
 ↓12.4 ↑1.8
 ```
 
 축약 텍스트 예:
 
 ```text
-C32 G18 61°
+C32 G18
 ```
 
 표시 규칙:
 
 - 메뉴바 항목은 지표별로 고정폭을 가진다.
 - 고정폭은 AppKit `NSStatusItem.length`로 강제하며, 표시값이 변해도 레이아웃 시프트가 발생하지 않도록 지표별 최대 예상 문자열 기준으로 정한다.
-- 고정폭은 값이 잘리지 않는 범위 안에서 compact하게 유지한다. 기준 폭은 chart on 상태에서 CPU 112pt, GPU 106pt, Temperature 106pt, Network 102pt, Disk 128pt로 둔다.
+- 고정폭은 값이 잘리지 않는 범위 안에서 compact하게 유지한다. 기준 폭은 chart on 상태에서 CPU 112pt, GPU 106pt, Network 102pt, Disk 128pt로 둔다.
 - 메뉴바 chart를 끈 항목은 chart 영역만큼 `NSStatusItem.length`를 줄인다. chart off 상태에서도 해당 상태 안에서는 고정폭을 유지한다.
 - status item 내부 렌더링은 불필요한 좌우 padding을 두지 않고, icon/text/sparkline을 1-2px 단위 여백으로 조밀하게 배치한다.
 - chart가 켜진 상태에서 값과 chart 사이에는 4pt 안팎의 일정한 여백을 둔다.
 - 숫자는 monospaced digit을 사용한다.
 - 메뉴바 텍스트는 현재 상태 요약을 담되 1-2줄 안에 들어오게 압축한다.
 - 메뉴바 표시 모델은 모든 지표에 `primary/secondary`를 강제하지 않는다.
-- CPU처럼 주값과 하위 요약값이 있는 지표는 `primary + optional secondary` 레이아웃을 사용한다.
-- Temperature처럼 secondary 값이 없는 지표는 메뉴바, popover current value, manager preview에서 secondary 영역 자체를 만들지 않는다.
+- CPU/GPU처럼 온도 보조값이 있는 지표는 `primary + optional secondary` 레이아웃을 사용한다.
 - secondary 값이 없거나 설정에서 secondary 표시를 끈 경우 메뉴바 두 번째 줄에 `Live`, `Experimental`, `Unsupported`, `Unavailable` 같은 상태 텍스트를 대신 표시하지 않고, 단일 행 레이아웃으로 수직 중앙 정렬한다.
 - metric status는 popover header, detail section, manager window에서만 표시한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
 - Network 메뉴바 항목도 다른 지표와 동일하게 leading system icon을 표시한다.
 - chart가 켜진 단일값 메뉴바 항목은 텍스트를 chart 방향으로 정렬해 값 끝과 chart 시작 사이의 여백이 항목별로 비슷하게 보이도록 한다.
-- CPU/GPU/Temperature처럼 leading icon이 있는 항목은 icon과 label/value 그룹 사이의 여백이 커지지 않도록 label/value 그룹의 오른쪽 정렬 이동량을 제한한다.
+- CPU/GPU처럼 leading icon이 있는 항목은 icon과 label/value 그룹 사이의 여백이 커지지 않도록 label/value 그룹의 오른쪽 정렬 이동량을 제한한다.
 - Network/Disk peer pair 항목은 chart가 켜져 있어도 방향 label과 값을 chart 쪽으로 밀지 않고 start 방향에 둔다. icon, 방향 label, 값은 왼쪽에서 조밀하게 읽혀야 한다.
 - Network/Disk peer pair 항목은 방향 label을 start 정렬하고, 값은 고정 value column 안에서 end 정렬한다. 한 항목의 두 줄은 같은 label column 폭과 같은 value column right edge를 공유해야 하며, `R`/`W`처럼 label glyph 폭이 달라도 value 끝이 어긋나면 안 된다. label과 value column 사이의 여백은 3pt 안팎으로 유지하고, value column은 현재 단위에서 유효숫자 3자리까지 표시할 수 있는 폭을 확보한다.
 - leading icon이 있는 peer pair 항목은 icon과 방향 label 사이의 거리를 CPU/GPU 같은 일반 icon 항목과 같은 수준으로 유지한다.
 - 메뉴바 sparkline chart 폭은 모든 지표에서 Disk 기준인 42pt로 통일한다.
 - Network 메뉴바 항목은 leading icon과 download/upload 두 줄 값을 유지하되, icon-label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 108pt, chart off 62pt, chart 42pt로 둔다.
 - Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, icon-label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 108pt, chart off 62pt, chart 42pt로 둔다.
-- 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
+- 온도 secondary value 표시 설정은 CPU/GPU metric tab 안에 각각 노출한다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바와 manager/settings preview에 표시되는 system icon은 multicolor/palette 렌더링을 쓰지 않고 단색 template/tint 렌더링으로 표시한다.
 - AppKit status item에 직접 그려 넣는 메뉴바 label 이미지는 고정 검정/흰색 픽셀이 아니라 template mask로 제공한다. 최종 foreground 색상은 macOS 메뉴바가 현재 배경과 appearance에 맞춰 결정해야 하며, primary/secondary 텍스트와 sparkline 위계는 색상이 아니라 alpha 차이로 표현한다.
@@ -798,7 +797,7 @@ C32 G18 61°
 
 메뉴 항목 클릭 인터랙션:
 
-- 사용자가 CPU/GPU/Temperature/Network/Disk 메뉴바 항목을 클릭하면 해당 지표 전용 popover를 연다.
+- 사용자가 CPU/GPU/Network/Disk 메뉴바 항목을 클릭하면 해당 지표 전용 popover를 연다.
 - popover는 항상 하나만 열린다.
 - popover가 열린 직후 popover window가 key window가 되어 버튼, segmented control, scroll view가 즉시 상호작용 가능해야 한다.
 - 외부 앱, desktop, 설정 창 등 popover 바깥 영역을 클릭하면 popover는 닫힌다.
@@ -813,8 +812,9 @@ C32 G18 61°
 - chart 좌우 padding은 최소화한다. CPU, Network, Disk처럼 사용자가 추이를 빠르게 읽어야 하는 지표에서 plot 영역보다 padding/gutter가 두드러져 보이면 안 된다.
 - chart grid는 데이터보다 진하게 보이면 안 되며, series line과 legend가 우선 읽혀야 한다.
 - network와 disk처럼 방향이 둘인 지표는 download/upload 또는 read/write를 같은 chart 안에 별도 series로 표시한다.
-- CPU는 total usage를 주 series로 표시하고 P-core/E-core 평균은 세부 정보와 현재 코어 목록으로 표시한다.
-- Temperature는 CPU/GPU/SoC 온도를 별도 series로 표시하되, 불확실하거나 없는 값은 표시하지 않는다.
+- CPU는 total usage를 주 series로 표시하고 CPU 온도를 secondary current value와 detail row에 표시한다. P-core/E-core 평균은 세부 정보와 현재 코어 목록으로 표시한다.
+- GPU는 total usage를 주 series로 표시하고 GPU 온도를 secondary current value와 detail row에 표시한다.
+- SoC 온도와 thermal state는 독립 popover가 아니라 CPU/GPU detail row의 참고 정보로 표시한다.
 - 값이 `Unsupported` 또는 `Unavailable`이면 chart 영역은 비어 있음을 명시하고 마지막 상태와 사유를 보여준다.
 
 기본 구성:
@@ -832,13 +832,8 @@ E0  ██░░░░░░░░  18%
 
 GPU
 Total        18%
+Temperature  54°C
 Detail       Unsupported
-
-Temperature
-CPU          61°C
-GPU          54°C
-SoC          63°C
-Thermal      Nominal
 
 Disk
 Read         128 MB/s
@@ -865,15 +860,16 @@ Upload         1.8 MB/s
 
 manager/settings window 기능:
 
-- CPU, GPU, Temperature, Network, Disk 메뉴바 항목 on/off
+- CPU, GPU, Network, Disk 메뉴바 항목 on/off
 - metric별 menu item detail 설정
-  - 계층형 secondary value가 있는 지표의 secondary 표시
+  - CPU/GPU 온도 secondary value 표시
   - menu bar chart 표시
   - popover detail section 표시
-- Temperature, GPU처럼 계층형 secondary value가 없는 지표의 metric tab에는 secondary value 설정을 노출하지 않는다.
+- Network/Disk처럼 온도 secondary value가 없는 지표의 metric tab에는 secondary value 설정을 노출하지 않는다.
 - 각 항목의 고정폭 메뉴바 폭 표시
 - 샘플링 모드 설정
-- unknown sensor, VPN interface, external disk, temperature unit 설정
+- VPN interface, external disk 설정
+- CPU/GPU tab 하위의 온도 단위 설정
 - 시작 시 자동 실행 설정
 - 앱 종료 버튼
 
@@ -881,8 +877,9 @@ manager/settings window UI 정책:
 
 - macOS 표준 utility/settings window처럼 동작한다.
 - settings window header의 아이콘은 앱 번들 아이콘과 일치해야 한다.
-- 설정 화면은 sidebar checkbox 목록이 아니라 `General`, `CPU`, `GPU`, `Temperature`, `Network`, `Disk` 탭으로 구성한다.
+- 설정 화면은 sidebar checkbox 목록이 아니라 `General`, `CPU`, `GPU`, `Network`, `Disk` 탭으로 구성한다.
 - metric tab에는 해당 metric의 on/off와 상세 표시 설정을 함께 둔다.
+- CPU/GPU metric tab에는 온도 secondary value 표시 여부와 Celsius/Fahrenheit 단위 설정을 함께 둔다.
 - 항목별 toggle은 즉시 저장한다.
 - live chart와 지표 상세 정보는 각 metric popover가 담당한다. manager window는 설정 변경 중 응답성을 우선한다.
 - 메뉴바에서 모든 지표를 끄는 것은 허용하지 않는다.
@@ -921,7 +918,6 @@ struct MetricItemSettings: Codable {
 - 메뉴바에 표시할 항목
   - CPU
   - GPU
-  - Temperature
   - Network
   - Disk
 - 샘플링 간격
@@ -929,10 +925,10 @@ struct MetricItemSettings: Codable {
   - 보통
   - 높음
 - 시작 시 자동 실행
-- 알 수 없는 센서 표시
 - VPN 인터페이스 포함
 - 외장 디스크 포함
-- 온도 단위
+- CPU/GPU 온도 secondary value 표시
+- CPU/GPU 하위 온도 단위
   - Celsius
   - Fahrenheit
 
@@ -1177,7 +1173,7 @@ UI:
 
 - 각 지표가 독립 메뉴바 항목으로 표시되는지 확인
 - manager window에서 항목 on/off가 즉시 반영되는지 확인
-- menu item visibility QA는 CPU/GPU/Temperature/Network/Disk를 각각 끈 상태와 다시 켠 상태를 모두 확인한다.
+- menu item visibility QA는 CPU/GPU/Network/Disk를 각각 끈 상태와 다시 켠 상태를 모두 확인한다.
 - 마지막으로 남은 menu item은 끌 수 없고, 이 보호 동작은 QA에서 별도로 확인한다.
 - 메뉴바 값 변화 중 항목 폭이 변하지 않는지 확인
 - chart 표시 옵션 on/off 상태를 모두 캡처해 chart off 상태에서 메뉴바 항목 폭이 줄고, chart on 상태에서 각 지표의 sparkline이 표시되는지 확인
