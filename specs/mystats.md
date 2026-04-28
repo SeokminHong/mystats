@@ -756,13 +756,14 @@ C32 G18 61°
 - metric status는 popover header, detail section, manager window에서만 표시한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
 - Network 메뉴바 항목도 다른 지표와 동일하게 leading system icon을 표시한다.
-- chart가 켜진 메뉴바 항목은 텍스트를 chart 방향으로 정렬해 값 끝과 chart 시작 사이의 여백이 항목별로 비슷하게 보이도록 한다.
+- chart가 켜진 단일값 메뉴바 항목은 텍스트를 chart 방향으로 정렬해 값 끝과 chart 시작 사이의 여백이 항목별로 비슷하게 보이도록 한다.
 - CPU/GPU/Temperature처럼 leading icon이 있는 항목은 icon과 label/value 그룹 사이의 여백이 커지지 않도록 label/value 그룹의 오른쪽 정렬 이동량을 제한한다.
-- Network/Disk peer pair 항목은 방향 label과 값을 하나의 compact group으로 붙여 표시한다. label과 값 사이의 여백은 3pt 안팎으로 유지하고, 전체 group은 chart가 켜져 있을 때 chart 쪽으로 정렬한다.
-- leading icon이 있는 peer pair 항목은 icon과 방향 label 사이의 거리를 조밀하게 유지한다.
+- Network/Disk peer pair 항목은 chart가 켜져 있어도 방향 label과 값을 chart 쪽으로 밀지 않고 start 방향에 둔다. icon, 방향 label, 값은 왼쪽에서 조밀하게 읽혀야 한다.
+- Network/Disk peer pair 항목은 방향 label과 값을 하나의 compact group으로 붙여 표시한다. label과 값 사이의 여백은 3pt 안팎으로 유지하고, 값 영역은 현재 단위에서 유효숫자 3자리까지 표시할 수 있는 폭을 확보한다.
+- leading icon이 있는 peer pair 항목은 icon과 방향 label 사이의 거리를 1-2pt 수준으로 조밀하게 유지한다.
 - 메뉴바 sparkline chart 폭은 모든 지표에서 Disk 기준인 42pt로 통일한다.
-- Network 메뉴바 항목은 leading icon과 download/upload 두 줄 값을 유지하되, end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 116pt, chart off 70pt, chart 42pt로 둔다.
-- Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, end 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 128pt, chart off 82pt, chart 42pt로 둔다.
+- Network 메뉴바 항목은 leading icon과 download/upload 두 줄 값을 유지하되, icon-label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 108pt, chart off 62pt, chart 42pt로 둔다.
+- Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, icon-label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 108pt, chart off 62pt, chart 42pt로 둔다.
 - 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바와 manager/settings preview에 표시되는 system icon은 multicolor/palette 렌더링을 쓰지 않고 단색 template/tint 렌더링으로 표시한다.
