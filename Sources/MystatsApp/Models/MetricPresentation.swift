@@ -46,17 +46,18 @@ extension MenuBarItem {
             return MetricPresentation(
                 title: "Net",
                 symbolName: "arrow.up.arrow.down",
-                menuWidth: 108,
-                compactMenuWidth: 62,
+                menuWidth: 96,
+                compactMenuWidth: 52,
                 tint: .green,
+                showsMenuBarIcon: false,
                 menuSparklineWidth: 42
             )
         case .disk:
             return MetricPresentation(
                 title: "Disk",
                 symbolName: "internaldrive",
-                menuWidth: 108,
-                compactMenuWidth: 62,
+                menuWidth: 112,
+                compactMenuWidth: 66,
                 tint: .teal,
                 menuSparklineWidth: 42
             )

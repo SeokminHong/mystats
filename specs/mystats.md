@@ -754,9 +754,9 @@ C32 G18
 
 - 메뉴바 항목은 지표별로 고정폭을 가진다.
 - 고정폭은 AppKit `NSStatusItem.length`로 강제하며, 표시값이 변해도 레이아웃 시프트가 발생하지 않도록 지표별 최대 예상 문자열 기준으로 정한다.
-- 고정폭은 값이 잘리지 않는 범위 안에서 compact하게 유지한다. 기준 폭은 chart on 상태에서 CPU 112pt, GPU 106pt, Network 102pt, Disk 128pt로 둔다.
+- 고정폭은 값이 잘리지 않는 범위 안에서 compact하게 유지한다. 기준 폭은 chart on 상태에서 CPU 112pt, GPU 106pt, Network 96pt, Disk 112pt로 둔다.
 - 메뉴바 chart를 끈 항목은 chart 영역만큼 `NSStatusItem.length`를 줄인다. chart off 상태에서도 해당 상태 안에서는 고정폭을 유지한다.
-- status item 내부 렌더링은 불필요한 좌우 padding을 두지 않고, icon/text/sparkline을 1-2px 단위 여백으로 조밀하게 배치한다.
+- status item 내부 렌더링은 불필요한 좌우 padding을 두지 않고, icon/text/sparkline을 항목별 고정 여백 규칙에 맞춰 조밀하게 배치한다.
 - chart가 켜진 상태에서 값과 chart 사이에는 4pt 안팎의 일정한 여백을 둔다.
 - 숫자는 monospaced digit을 사용한다.
 - 메뉴바 텍스트는 현재 상태 요약을 담되 1-2줄 안에 들어오게 압축한다.
@@ -765,17 +765,17 @@ C32 G18
 - secondary 값이 없거나 설정에서 secondary 표시를 끈 경우 메뉴바 두 번째 줄에 `Live`, `Experimental`, `Unsupported`, `Unavailable` 같은 상태 텍스트를 대신 표시하지 않고, 단일 행 레이아웃으로 수직 중앙 정렬한다.
 - metric status는 popover header, detail section, manager window에서만 표시한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
-- Network 메뉴바 항목도 다른 지표와 동일하게 leading system icon을 표시한다.
+- Network 메뉴바 항목은 leading system icon을 표시하지 않는다. download/upload 방향 화살표 label이 compact icon 역할을 겸하며, 화살표 label은 icon과 같은 선명한 위계로 렌더링한다.
 - chart가 켜진 단일값 메뉴바 항목은 텍스트를 chart 방향으로 정렬해 값 끝과 chart 시작 사이의 여백이 항목별로 비슷하게 보이도록 한다.
 - CPU/GPU처럼 leading icon이 있는 항목은 icon과 label/value 그룹 사이의 여백이 커지지 않도록 label/value 그룹의 오른쪽 정렬 이동량을 제한한다.
 - Network/Disk peer pair 항목은 chart가 켜져 있어도 방향 label과 값을 chart 쪽으로 밀지 않고 start 방향에 둔다. icon, 방향 label, 값은 왼쪽에서 조밀하게 읽혀야 한다.
 - Network/Disk peer pair 항목은 방향 label을 start 정렬하고, 값은 고정 value column 안에서 end 정렬한다. 한 항목의 두 줄은 같은 label column 폭과 같은 value column right edge를 공유해야 하며, `R`/`W`처럼 label glyph 폭이 달라도 value 끝이 어긋나면 안 된다. label과 value column 사이의 여백은 3pt 안팎으로 유지하고, value column은 현재 단위에서 유효숫자 3자리까지 표시할 수 있는 폭을 확보한다.
-- leading icon이 있는 peer pair 항목은 icon과 방향 label 사이의 거리를 CPU/GPU 같은 일반 icon 항목과 같은 수준으로 유지한다.
+- leading icon이 있는 peer pair 항목은 icon과 방향 label 사이에 CPU/GPU 같은 일반 icon 항목과 같은 수준인 4pt 안팎의 여백을 둔다.
 - 메뉴바 sparkline chart 폭은 모든 지표에서 Disk 기준인 42pt로 통일한다.
-- Network 메뉴바 항목은 leading icon과 download/upload 두 줄 값을 유지하되, icon-label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 108pt, chart off 62pt, chart 42pt로 둔다.
-- Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, icon-label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 108pt, chart off 62pt, chart 42pt로 둔다.
+- Network 메뉴바 항목은 download/upload 두 줄 값을 유지하되, 방향 label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 96pt, chart off 52pt, chart 42pt로 둔다.
+- Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, icon-label-value group과 chart 사이의 남는 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 112pt, chart off 66pt, chart 42pt로 둔다.
 - 온도 secondary value 표시 설정은 CPU/GPU metric tab 안에 각각 노출한다.
-- 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
+- CPU/GPU/Disk 항목은 해당 지표를 나타내는 system icon을 함께 표시한다. Network는 별도 system icon 없이 방향 화살표 label을 icon 역할로 사용한다.
 - 메뉴바와 manager/settings preview에 표시되는 system icon은 multicolor/palette 렌더링을 쓰지 않고 단색 template/tint 렌더링으로 표시한다.
 - AppKit status item에 직접 그려 넣는 메뉴바 label 이미지는 고정 검정/흰색 픽셀이 아니라 template mask로 제공한다. 최종 foreground 색상은 macOS 메뉴바가 현재 배경과 appearance에 맞춰 결정해야 하며, primary/secondary 텍스트와 sparkline 위계는 색상이 아니라 alpha 차이로 표현한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.

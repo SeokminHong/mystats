@@ -352,7 +352,7 @@ enum StatusItemImageRenderer {
 
         let chartWidth: CGFloat = itemSettings.showsMenuBarSparkline ? item.presentation.menuSparklineWidth : 0
         let chartGap: CGFloat = itemSettings.showsMenuBarSparkline ? 4 : 0
-        let textX: CGFloat = item.presentation.showsMenuBarIcon ? 13 : 1
+        let textX: CGFloat = item.presentation.showsMenuBarIcon ? (display.menuLayout.isPaired ? 16 : 13) : 1
         let textWidth = width - textX - chartWidth - chartGap
         let alignsTextTowardChart = itemSettings.showsMenuBarSparkline
 
@@ -384,8 +384,9 @@ enum StatusItemImageRenderer {
         case .paired(let first, let second):
             let firstRect = NSRect(x: textX, y: 10, width: textWidth, height: 9)
             let secondRect = NSRect(x: textX, y: 2, width: textWidth, height: 9)
-            drawPeerValue(first, in: firstRect, alignsTowardChart: false)
-            drawPeerValue(second, in: secondRect, alignsTowardChart: false)
+            let labelColor = item.presentation.showsMenuBarIcon ? templateSecondaryColor : templatePrimaryColor
+            drawPeerValue(first, in: firstRect, labelColor: labelColor, alignsTowardChart: false)
+            drawPeerValue(second, in: secondRect, labelColor: labelColor, alignsTowardChart: false)
         }
 
         if itemSettings.showsMenuBarSparkline {
@@ -432,6 +433,7 @@ enum StatusItemImageRenderer {
     private static func drawPeerValue(
         _ value: MetricMenuPeerValue,
         in rect: NSRect,
+        labelColor: NSColor,
         alignsTowardChart: Bool
     ) {
         let labelWidth = peerLabelColumnWidth
@@ -441,7 +443,7 @@ enum StatusItemImageRenderer {
         let groupWidth = min(labelWidth + gap + valueWidth, rect.width)
         let groupX = alignsTowardChart ? max(rect.maxX - groupWidth, rect.minX) : rect.minX
 
-        drawText(value.label, in: NSRect(x: groupX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: templateSecondaryColor, weight: .semibold)
+        drawText(value.label, in: NSRect(x: groupX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: labelColor, weight: .semibold)
         drawText(value.value, in: NSRect(x: groupX + labelWidth + gap, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: templatePrimaryColor, weight: .semibold, alignment: .right)
     }
 
