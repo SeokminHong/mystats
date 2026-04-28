@@ -374,11 +374,11 @@ enum StatusItemImageRenderer {
                     weight: .regular,
                     alignsTowardChart: alignsTextTowardChart
                 )
-                drawText(primaryLine, in: primaryRect, size: 8.8, color: .labelColor, weight: .semibold)
-                drawText(secondary, in: secondaryRect, size: 7.5, color: .secondaryLabelColor, weight: .regular)
+                drawText(primaryLine, in: primaryRect, size: 8.8, color: templatePrimaryColor, weight: .semibold)
+                drawText(secondary, in: secondaryRect, size: 7.5, color: templateSecondaryColor, weight: .regular)
             } else {
                 let centeredRect = NSRect(x: primaryRect.minX, y: 5, width: primaryRect.width, height: 10)
-                drawText(primaryLine, in: centeredRect, size: 8.8, color: .labelColor, weight: .semibold)
+                drawText(primaryLine, in: centeredRect, size: 8.8, color: templatePrimaryColor, weight: .semibold)
             }
 
         case .paired(let first, let second):
@@ -392,10 +392,11 @@ enum StatusItemImageRenderer {
             drawSparkline(
                 display.chartSeries,
                 in: NSRect(x: width - chartWidth, y: 3, width: chartWidth, height: 14),
-                color: .labelColor
+                color: templatePrimaryColor
             )
         }
 
+        image.isTemplate = true
         return image
     }
 
@@ -405,7 +406,7 @@ enum StatusItemImageRenderer {
         }
         let template = symbol.copy() as? NSImage ?? symbol
         template.isTemplate = true
-        NSColor.labelColor.set()
+        templatePrimaryColor.set()
         template.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
     }
 
@@ -440,12 +441,20 @@ enum StatusItemImageRenderer {
         let groupWidth = min(labelWidth + gap + valueWidth, rect.width)
         let groupX = alignsTowardChart ? max(rect.maxX - groupWidth, rect.minX) : rect.minX
 
-        drawText(value.label, in: NSRect(x: groupX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: .secondaryLabelColor, weight: .semibold)
-        drawText(value.value, in: NSRect(x: groupX + labelWidth + gap, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: .labelColor, weight: .semibold, alignment: .right)
+        drawText(value.label, in: NSRect(x: groupX, y: rect.minY, width: labelWidth, height: rect.height), size: 8.4, color: templateSecondaryColor, weight: .semibold)
+        drawText(value.value, in: NSRect(x: groupX + labelWidth + gap, y: rect.minY, width: valueWidth, height: rect.height), size: 8.4, color: templatePrimaryColor, weight: .semibold, alignment: .right)
     }
 
     private static var peerValueColumnWidth: CGFloat {
         38
+    }
+
+    private static var templatePrimaryColor: NSColor {
+        NSColor.black
+    }
+
+    private static var templateSecondaryColor: NSColor {
+        NSColor.black.withAlphaComponent(0.62)
     }
 
     private static func compactTextRect(

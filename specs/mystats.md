@@ -767,6 +767,7 @@ C32 G18 61°
 - 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
 - 메뉴바와 manager/settings preview에 표시되는 system icon은 multicolor/palette 렌더링을 쓰지 않고 단색 template/tint 렌더링으로 표시한다.
+- AppKit status item에 직접 그려 넣는 메뉴바 label 이미지는 고정 검정/흰색 픽셀이 아니라 template mask로 제공한다. 최종 foreground 색상은 macOS 메뉴바가 현재 배경과 appearance에 맞춰 결정해야 하며, primary/secondary 텍스트와 sparkline 위계는 색상이 아니라 alpha 차이로 표현한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.
 - 메뉴바 sparkline은 배경색 변화에 흔들리지 않도록 지표별 accent color 대신 시스템 단색 foreground로 렌더링한다.
 - 메뉴바 sparkline은 데이터 선보다 약한 baseline/midline grid를 포함해 스케일을 읽을 수 있게 한다.
