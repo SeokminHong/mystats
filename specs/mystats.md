@@ -669,7 +669,8 @@ chart scale:
 - chart legend의 current 값은 history 배열의 마지막 값이 아니라 현재 snapshot을 기준으로 표시한다. history가 stale이거나 최신 snapshot을 아직 포함하지 않아도 메뉴바 current, detail current, legend current가 서로 달라져서는 안 된다.
 - chart summary의 Current 값도 현재 snapshot을 기준으로 표시한다. history 마지막 값이 오래되었거나 같은 timestamp의 stale 값이면 최신 snapshot으로 교체해 chart와 summary가 `Zero KB/s` 같은 오래된 값을 표시하지 않게 한다.
 - chart series는 현재 snapshot을 반드시 포함해야 한다. selected time window history가 최신 snapshot을 포함하지 못한 경우 chart resolver가 현재 snapshot을 마지막 point로 추가한다.
-- 독립 trend 축을 쓰는 chart는 오른쪽 축 label을 정확한 byte-rate 숫자로 표시하지 않는다. 정확한 현재값, min/max/avg는 legend와 summary stat에서 제공한다.
+- byte-rate chart의 오른쪽 y축 label은 `High`/`Low` 같은 추상 텍스트가 아니라 현재 window의 raw `bytesPerSecond` 범위를 읽기 쉬운 `KB/s`, `MB/s`, `GB/s` 단위 숫자로 표시한다.
+- 방향별 lane이 서로 다른 trend scale을 쓰더라도 오른쪽 y축 label은 chart window 전체 byte-rate 범위의 하한/상한을 나타낸다. 정확한 현재값, min/max/avg는 legend와 summary stat에서도 제공한다.
 - 독립 trend 축도 순간 spike 하나 때문에 정상 구간이 일직선처럼 눌리면 안 된다. domain은 robust percentile 기반으로 잡고, 실제 min/max/current는 summary와 detail 값으로 보존한다.
 - trend 축의 목적은 절대 byte-rate 비교가 아니라 변화량을 읽는 것이다. 따라서 중앙 percentile 범위를 우선 사용하고, 최소 표시 span은 절대값 magnitude보다 실제 변화가 보이는 쪽을 우선한다.
 - trend 축은 latest/current sample을 반드시 domain 안에 포함하고 padding을 둔다. 최신 값이 percentile 밖에 있다는 이유로 chart 상단/하단에 붙어 일직선처럼 보여서는 안 된다.
@@ -754,15 +755,17 @@ C32 G18 61°
 - secondary 값이 없거나 설정에서 secondary 표시를 끈 경우 메뉴바 두 번째 줄에 `Live`, `Experimental`, `Unsupported`, `Unavailable` 같은 상태 텍스트를 대신 표시하지 않고, 단일 행 레이아웃으로 수직 중앙 정렬한다.
 - metric status는 popover header, detail section, manager window에서만 표시한다.
 - Network download/upload, Disk read/write처럼 동등한 위계의 값은 peer pair 레이아웃으로 표시하며, 두 값을 같은 크기와 위계로 렌더링한다.
-- Network 메뉴바 항목은 download/upload 화살표 자체가 방향과 지표 종류를 나타내므로 별도 leading system icon을 표시하지 않는다.
+- Network 메뉴바 항목도 다른 지표와 동일하게 leading system icon을 표시한다.
 - chart가 켜진 메뉴바 항목은 텍스트를 chart 방향으로 정렬해 값 끝과 chart 시작 사이의 여백이 항목별로 비슷하게 보이도록 한다.
 - CPU/GPU/Temperature처럼 leading icon이 있는 항목은 icon과 label/value 그룹 사이의 여백이 커지지 않도록 label/value 그룹의 오른쪽 정렬 이동량을 제한한다.
-- Network/Disk peer pair 항목은 방향 label과 값 사이의 여백을 3pt 안팎으로 고정하고, label만 왼쪽에 남겨 값과 분리되어 보이지 않게 한다.
+- Network/Disk peer pair 항목은 방향 label을 텍스트 영역의 start에 고정하고 값은 end 정렬한다. 특히 Disk의 `R`/`W` label은 start 정렬되어야 하며, read/write 값은 서로 같은 end 기준선에 맞춰야 한다.
+- leading icon이 있는 peer pair 항목은 icon과 방향 label 사이의 거리를 조밀하게 유지한다.
 - 메뉴바 sparkline chart 폭은 모든 지표에서 Disk 기준인 42pt로 통일한다.
-- Network 메뉴바 항목은 leading icon이 없고 값이 두 줄로 압축되므로 end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 102pt, chart off 56pt, chart 42pt로 둔다.
+- Network 메뉴바 항목은 leading icon과 download/upload 두 줄 값을 유지하되, end 여백이 두드러져 보이지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 116pt, chart off 70pt, chart 42pt로 둔다.
 - Disk 메뉴바 항목은 leading icon과 read/write 두 줄 값을 유지하되, end 여백이 두드러지지 않도록 chart-on 고정폭을 필요한 만큼만 잡는다. 기준 폭은 chart on 128pt, chart off 82pt, chart 42pt로 둔다.
 - 계층형 secondary 값이 없는 지표에는 secondary value 표시 설정을 노출하지 않는다.
 - 각 항목은 해당 지표를 나타내는 system icon을 함께 표시한다.
+- 메뉴바와 manager/settings preview에 표시되는 system icon은 multicolor/palette 렌더링을 쓰지 않고 단색 template/tint 렌더링으로 표시한다.
 - 메뉴바 항목에는 작은 sparkline chart를 표시할 수 있다. 차트 역시 고정폭 status item 영역 안에 렌더링한다.
 - 메뉴바 sparkline은 배경색 변화에 흔들리지 않도록 지표별 accent color 대신 시스템 단색 foreground로 렌더링한다.
 - 메뉴바 sparkline은 데이터 선보다 약한 baseline/midline grid를 포함해 스케일을 읽을 수 있게 한다.
