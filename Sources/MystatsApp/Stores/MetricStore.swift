@@ -11,6 +11,7 @@ final class MetricStore: ObservableObject {
 
     private let persistentLogStore: PersistentMetricLogStore
     private var minuteArchive: [MetricSnapshot]
+    private var menuBarChartHistory: MenuBarChartHistory
     private var previewTimer: Timer?
     private var previewConfigurationProvider: (() -> MetricPreviewUpdateConfiguration)?
     private var networkCollector = NetworkRateCollector()
@@ -33,6 +34,10 @@ final class MetricStore: ObservableObject {
 
         self.history = initialHistory
         self.snapshot = initialHistory.elements.last ?? initialSnapshot
+        self.menuBarChartHistory = MenuBarChartHistory(capacity: Self.realtimeSampleCapacity)
+        for snapshot in initialHistory.elements {
+            self.menuBarChartHistory.append(snapshot)
+        }
         self.minuteArchive = persistedSnapshots.isEmpty
             ? Self.seedMinuteArchive(endingAt: initialSnapshot.timestamp)
             : Self.minuteRollups(from: persistedSnapshots, endingAt: initialSnapshot.timestamp)
@@ -94,10 +99,15 @@ final class MetricStore: ObservableObject {
         var nextHistory = history
         nextHistory.append(snapshot)
         history = nextHistory
+        menuBarChartHistory.append(snapshot)
         appendMinuteRollup(snapshot)
         if persists {
             persistentLogStore.append(snapshot)
         }
+    }
+
+    func menuBarChartSeries(for item: MenuBarItem) -> [MetricMenuChartSeries] {
+        menuBarChartHistory.series(for: item)
     }
 
     func history(for window: ChartTimeWindow) -> [MetricSnapshot] {
@@ -196,5 +206,70 @@ struct MetricPreviewUpdateConfiguration {
 
     var sampleInterval: TimeInterval {
         samplingMode.sampleInterval(isInteractive: isInteractive)
+    }
+}
+
+private struct MenuBarChartHistory {
+    private var cpu: RingBuffer<Double>
+    private var gpu: RingBuffer<Double>
+    private var thermalCPU: RingBuffer<Double>
+    private var networkDownload: RingBuffer<Double>
+    private var networkUpload: RingBuffer<Double>
+    private var diskRead: RingBuffer<Double>
+    private var diskWrite: RingBuffer<Double>
+
+    init(capacity: Int) {
+        self.cpu = RingBuffer(capacity: capacity)
+        self.gpu = RingBuffer(capacity: capacity)
+        self.thermalCPU = RingBuffer(capacity: capacity)
+        self.networkDownload = RingBuffer(capacity: capacity)
+        self.networkUpload = RingBuffer(capacity: capacity)
+        self.diskRead = RingBuffer(capacity: capacity)
+        self.diskWrite = RingBuffer(capacity: capacity)
+    }
+
+    mutating func append(_ snapshot: MetricSnapshot) {
+        if let value = snapshot.cpu?.totalUsage {
+            cpu.append(value)
+        }
+        if let value = snapshot.gpu?.totalUsage {
+            gpu.append(value)
+        }
+        if let value = snapshot.thermal?.cpuCelsius {
+            thermalCPU.append(value)
+        }
+        if let value = snapshot.network?.downloadBytesPerSecond {
+            networkDownload.append(Double(value))
+        }
+        if let value = snapshot.network?.uploadBytesPerSecond {
+            networkUpload.append(Double(value))
+        }
+        if let value = snapshot.disk?.readBytesPerSecond {
+            diskRead.append(Double(value))
+        }
+        if let value = snapshot.disk?.writeBytesPerSecond {
+            diskWrite.append(Double(value))
+        }
+    }
+
+    func series(for item: MenuBarItem) -> [MetricMenuChartSeries] {
+        switch item {
+        case .cpu:
+            return [MetricMenuChartSeries(values: cpu.elements)]
+        case .gpu:
+            return [MetricMenuChartSeries(values: gpu.elements)]
+        case .temperature:
+            return [MetricMenuChartSeries(values: thermalCPU.elements)]
+        case .network:
+            return [
+                MetricMenuChartSeries(values: networkDownload.elements),
+                MetricMenuChartSeries(values: networkUpload.elements)
+            ]
+        case .disk:
+            return [
+                MetricMenuChartSeries(values: diskRead.elements),
+                MetricMenuChartSeries(values: diskWrite.elements)
+            ]
+        }
     }
 }
