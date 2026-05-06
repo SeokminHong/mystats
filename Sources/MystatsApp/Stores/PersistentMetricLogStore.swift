@@ -11,6 +11,7 @@ final class PersistentMetricLogStore {
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
     private let dayFormatter: DateFormatter
+    private let logQueue = DispatchQueue(label: "com.seokmin.mystats.metric-log")
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.seokmin.mystats",
         category: "MetricLog"
@@ -38,7 +39,36 @@ final class PersistentMetricLogStore {
     }
 
     func append(_ snapshot: MetricSnapshot) {
-        cleanupIfNeeded()
+        logQueue.async { [self] in
+            appendSynchronously(snapshot)
+        }
+    }
+
+    func loadSnapshots(since startDate: Date, now: Date = Date()) -> [MetricSnapshot] {
+        logQueue.sync {
+            cleanupIfNeededSynchronously(now: now, force: true)
+
+            do {
+                try ensureDirectoryExists()
+                return try logFileURLs()
+                    .flatMap { try loadSnapshots(from: $0) }
+                    .filter { $0.timestamp >= startDate }
+                    .sorted { $0.timestamp < $1.timestamp }
+            } catch {
+                logger.error("Failed to load metric logs: \(String(describing: error), privacy: .public)")
+                return []
+            }
+        }
+    }
+
+    func cleanupIfNeeded(now: Date = Date(), force: Bool = false) {
+        logQueue.async { [self] in
+            cleanupIfNeededSynchronously(now: now, force: force)
+        }
+    }
+
+    private func appendSynchronously(_ snapshot: MetricSnapshot) {
+        cleanupIfNeededSynchronously()
 
         do {
             try ensureDirectoryExists()
@@ -62,22 +92,7 @@ final class PersistentMetricLogStore {
         }
     }
 
-    func loadSnapshots(since startDate: Date, now: Date = Date()) -> [MetricSnapshot] {
-        cleanupIfNeeded(now: now, force: true)
-
-        do {
-            try ensureDirectoryExists()
-            return try logFileURLs()
-                .flatMap { try loadSnapshots(from: $0) }
-                .filter { $0.timestamp >= startDate }
-                .sorted { $0.timestamp < $1.timestamp }
-        } catch {
-            logger.error("Failed to load metric logs: \(String(describing: error), privacy: .public)")
-            return []
-        }
-    }
-
-    func cleanupIfNeeded(now: Date = Date(), force: Bool = false) {
+    private func cleanupIfNeededSynchronously(now: Date = Date(), force: Bool = false) {
         guard force || lastCleanupAt.map({ now.timeIntervalSince($0) >= Self.cleanupInterval }) ?? true else {
             return
         }
