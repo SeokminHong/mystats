@@ -1138,6 +1138,27 @@ App Store 배포:
 - GitHub 태그 `v0.2.0`의 source tarball sha256을 기준으로 Homebrew formula를 갱신한다.
 - Homebrew formula의 `test do`는 설치된 `mystats --version`에서 `mystats 0.2.0`을 확인한다.
 
+### 24.2 0.2.1 릴리즈 기준
+
+`0.2.1`은 CPU 오버헤드 절감을 위한 성능 최적화 릴리즈로 배포한다.
+
+포함 범위:
+
+- idle/interactive 상태별 샘플링 주기를 실제 런타임에 적용한다.
+- metric history append를 원형 버퍼 기반으로 처리해 capacity 이후 append 비용을 고정한다.
+- persistent metric log 쓰기를 UI 갱신 경로와 분리된 background 직렬 queue로 이동한다.
+- 메뉴바 status item은 메뉴바용 chart series를 증분 유지하고, 렌더 입력이 바뀌지 않은 항목의 이미지 갱신을 생략한다.
+- README는 현재 메뉴바 렌더 상태를 보여주는 DEBUG visual QA 이미지를 유지한다.
+
+완료 기준:
+
+- 앱의 `--version` 출력과 local app bundle의 `CFBundleShortVersionString`은 `0.2.1`이어야 한다.
+- `swift test`가 통과해야 한다.
+- release build가 통과해야 한다.
+- DEBUG visual QA render가 README에 첨부한 이미지를 생성할 수 있어야 한다.
+- GitHub 태그 `v0.2.1`의 source tarball sha256을 기준으로 Homebrew formula를 갱신한다.
+- Homebrew formula의 `test do`는 설치된 `mystats --version`에서 `mystats 0.2.1`을 확인한다.
+
 ## 25. 테스트 계획
 
 CPU:

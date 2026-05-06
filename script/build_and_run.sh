@@ -4,7 +4,7 @@ set -euo pipefail
 MODE="${1:-run}"
 METRIC="${2:-cpu}"
 APP_NAME="mystats"
-APP_VERSION="0.2.0"
+APP_VERSION="0.2.1"
 BUNDLE_ID="com.seokmin.mystats"
 MIN_SYSTEM_VERSION="13.0"
 
