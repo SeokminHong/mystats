@@ -87,3 +87,12 @@ import Testing
     #expect(ChartTimeWindow.week.duration == 7 * 24 * 60 * 60)
     #expect(ChartTimeWindow.realtime.summaryLabel == "Last 15m")
 }
+
+@Test func samplingModeIntervalsMatchOverheadPolicy() {
+    #expect(SamplingMode.low.sampleInterval(isInteractive: false) == 15)
+    #expect(SamplingMode.low.sampleInterval(isInteractive: true) == 5)
+    #expect(SamplingMode.normal.sampleInterval(isInteractive: false) == 5)
+    #expect(SamplingMode.normal.sampleInterval(isInteractive: true) == 1)
+    #expect(SamplingMode.high.sampleInterval(isInteractive: false) == 2)
+    #expect(SamplingMode.high.sampleInterval(isInteractive: true) == 1)
+}

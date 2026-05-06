@@ -12,6 +12,7 @@ final class MetricStore: ObservableObject {
     private let persistentLogStore: PersistentMetricLogStore
     private var minuteArchive: [MetricSnapshot]
     private var previewTimer: Timer?
+    private var previewConfigurationProvider: (() -> MetricPreviewUpdateConfiguration)?
     private var networkCollector = NetworkRateCollector()
 
     init(persistentLogStore: PersistentMetricLogStore = PersistentMetricLogStore()) {
@@ -37,16 +38,55 @@ final class MetricStore: ObservableObject {
             : Self.minuteRollups(from: persistedSnapshots, endingAt: initialSnapshot.timestamp)
     }
 
-    func startPreviewUpdates(includeVPNInterfaces: @escaping () -> Bool = { false }) {
-        guard previewTimer == nil else {
+    func startPreviewUpdates(
+        configuration: @escaping () -> MetricPreviewUpdateConfiguration = {
+            MetricPreviewUpdateConfiguration(includeVPNInterfaces: false, samplingMode: .normal, isInteractive: false)
+        }
+    ) {
+        guard previewConfigurationProvider == nil else {
             return
         }
 
-        previewTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        previewConfigurationProvider = configuration
+        scheduleNextPreviewUpdate()
+    }
+
+    func refreshPreviewUpdates(immediate: Bool = false) {
+        guard previewConfigurationProvider != nil else {
+            return
+        }
+
+        previewTimer?.invalidate()
+        if immediate {
+            applyScheduledPreviewSnapshot()
+        } else {
+            scheduleNextPreviewUpdate()
+        }
+    }
+
+    private func scheduleNextPreviewUpdate() {
+        guard let configuration = previewConfigurationProvider?() else {
+            return
+        }
+
+        previewTimer?.invalidate()
+        let interval = configuration.sampleInterval
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in
-                self?.applyPreviewSnapshot(includeVPNInterfaces: includeVPNInterfaces())
+                self?.applyScheduledPreviewSnapshot()
             }
         }
+        timer.tolerance = max(interval * 0.2, 0.2)
+        previewTimer = timer
+    }
+
+    private func applyScheduledPreviewSnapshot() {
+        guard let configuration = previewConfigurationProvider?() else {
+            return
+        }
+
+        applyPreviewSnapshot(includeVPNInterfaces: configuration.includeVPNInterfaces)
+        scheduleNextPreviewUpdate()
     }
 
     func apply(_ snapshot: MetricSnapshot, persists: Bool = true) {
@@ -146,5 +186,15 @@ final class MetricStore: ObservableObject {
 
     private static func minuteBucket(_ date: Date) -> Int {
         Int(date.timeIntervalSince1970 / 60)
+    }
+}
+
+struct MetricPreviewUpdateConfiguration {
+    let includeVPNInterfaces: Bool
+    let samplingMode: SamplingMode
+    let isInteractive: Bool
+
+    var sampleInterval: TimeInterval {
+        samplingMode.sampleInterval(isInteractive: isInteractive)
     }
 }

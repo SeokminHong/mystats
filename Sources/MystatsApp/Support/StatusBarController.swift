@@ -28,7 +28,14 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         self.metricStore = metricStore
         self.settingsStore = settingsStore
-        metricStore.startPreviewUpdates { settingsStore.settings.includeVPNInterfaces }
+        metricStore.startPreviewUpdates { [weak self, weak settingsStore] in
+            let settings = settingsStore?.settings
+            return MetricPreviewUpdateConfiguration(
+                includeVPNInterfaces: settings?.includeVPNInterfaces ?? false,
+                samplingMode: settings?.samplingMode ?? .normal,
+                isInteractive: self?.activePopover?.isShown == true
+            )
+        }
         syncStatusItems()
         renderStatusItems()
 
@@ -38,6 +45,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 Task { @MainActor in
                     self?.syncStatusItems()
                     self?.renderStatusItems()
+                    self?.metricStore?.refreshPreviewUpdates()
                 }
             }
             .store(in: &cancellables)
@@ -145,6 +153,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         activePopover = popover
         activeItem = item
+        metricStore.refreshPreviewUpdates(immediate: true)
         focusPopover(popover)
         startPopoverEventMonitoring()
     }
@@ -162,6 +171,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         activePopover?.close()
         activePopover = nil
         activeItem = nil
+        metricStore?.refreshPreviewUpdates()
     }
 
     private func focusPopover(_ popover: NSPopover) {
@@ -261,6 +271,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             stopPopoverEventMonitoring()
             activePopover = nil
             activeItem = nil
+            metricStore?.refreshPreviewUpdates()
         }
     }
 }

@@ -158,6 +158,23 @@ public enum SamplingMode: String, CaseIterable, Codable, Equatable, Identifiable
     case high
 
     public var id: String { rawValue }
+
+    public func sampleInterval(isInteractive: Bool) -> TimeInterval {
+        switch (self, isInteractive) {
+        case (.low, false):
+            return 15
+        case (.low, true):
+            return 5
+        case (.normal, false):
+            return 5
+        case (.normal, true):
+            return 1
+        case (.high, false):
+            return 2
+        case (.high, true):
+            return 1
+        }
+    }
 }
 
 public enum TemperatureUnit: String, CaseIterable, Codable, Equatable, Identifiable, Sendable {
