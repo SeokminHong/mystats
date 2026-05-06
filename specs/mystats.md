@@ -609,20 +609,22 @@ VPN 트래픽:
 
 | 지표 | 주기 |
 | --- | ---: |
-| CPU | 2초 |
-| Network | 2초 |
-| Disk | 2초 |
-| GPU | 5초 |
-| Temperature | 10초 |
-| Thermal State | 이벤트 기반 + 10초 fallback |
+| CPU | 5초 |
+| Network | 5초 |
+| Disk | 5초 |
+| GPU | 10초 |
+| Temperature | 15초 |
+| Thermal State | 이벤트 기반 + 15초 fallback |
 
 설정의 샘플링 모드:
 
-- 낮음: 기본 주기보다 느리게 샘플링한다.
-- 보통: 위 기본값을 사용한다.
-- 높음: 팝오버 열림 상태의 반응성을 우선하되 idle CPU 사용량을 검증해야 한다.
+- 낮음: idle 15초, interactive 5초를 기준으로 샘플링한다.
+- 보통: idle 5초, interactive 1초를 기준으로 샘플링한다.
+- 높음: idle 2초, interactive 1초를 기준으로 샘플링한다.
 
 샘플링 정책 변경은 `SamplerScheduler`에 모아 둔다. 각 collector가 자체 timer를 가지지 않는다.
+
+interactive 상태는 metric popover가 열린 동안만 적용한다. 메뉴바만 표시되는 idle 상태에서는 status item 렌더링과 collector 실행을 idle 주기에 맞춰 줄이고, popover를 열면 다음 tick을 기다리지 않고 즉시 한 번 샘플을 갱신한 뒤 interactive 주기로 전환한다.
 
 정확도 정책:
 
