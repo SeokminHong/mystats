@@ -637,6 +637,8 @@ interactive 상태는 metric popover가 열린 동안만 적용한다. 메뉴바
 - idle 상태에서 앱의 CPU 사용량은 지속적으로 낮아야 한다.
 - 팝오버 닫힘 상태에서는 UI 갱신과 collector 실행을 최소화한다.
 - 장시간 실행 시 ring buffer 크기 이상으로 메모리가 증가하지 않아야 한다.
+- 샘플 적용 경로는 메인 액터에서 파일 I/O를 직접 수행하지 않는다. persistent metric log 쓰기는 UI 갱신과 분리된 직렬 background 경로에서 처리한다.
+- status item은 새 snapshot이 들어와도 실제 표시 입력이 바뀌지 않은 항목의 이미지 렌더링과 `NSStatusBarButton` 갱신을 생략한다.
 
 ## 17. History와 Metric Log 정책
 
@@ -651,7 +653,7 @@ interactive 상태는 metric popover가 열린 동안만 적용한다. 메뉴바
 - persistent metric log cleanup 주기: 앱 시작 시 + 6시간마다
 - 앱 재시작 후 최근 persistent metric log를 읽어 realtime ring buffer와 minute rollup을 복원한다.
 
-ring buffer는 값과 timestamp를 함께 저장한다. 샘플링 간격이 달라질 수 있으므로 배열 인덱스만으로 시간 간격을 추정하지 않는다.
+ring buffer는 값과 timestamp를 함께 저장한다. 샘플링 간격이 달라질 수 있으므로 배열 인덱스만으로 시간 간격을 추정하지 않는다. 샘플 append는 기존 요소를 shift하지 않는 원형 버퍼 구조로 처리한다.
 
 장기 window는 1초 raw sample을 모두 보관하지 않는다. 실시간 window는 짧은 raw ring buffer를 사용하고, 1일/1주 window는 분 단위 rollup snapshot을 사용한다. 이렇게 해야 1주 그래프를 제공하면서도 메뉴바 앱 자체의 메모리/CPU 비용을 통제할 수 있다.
 
